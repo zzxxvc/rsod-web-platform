@@ -93,6 +93,7 @@
 import { ref, reactive } from "vue";
 import { UserFilled, User, Message, Lock } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
+import { register } from '../api/auth.js'
 
 const router = useRouter();
 
@@ -106,21 +107,21 @@ const registerForm = reactive({
 
 const registerRules = {
   username: [
-    { required: true, message: "请输入用户名", trigger: "blur" },
-    { min: 3, max: 20, message: "用户名长度在3到20个字符", trigger: "blur" },
-    { pattern: /^[a-zA-Z0-9_]+$/, message: "用户名只能包含字母、数字和下划线", trigger: "blur" },
+    {required: true, message: "请输入用户名", trigger: "blur"},
+    {min: 3, max: 20, message: "用户名长度在3到20个字符", trigger: "blur"},
+    {pattern: /^[a-zA-Z0-9_]+$/, message: "用户名只能包含字母、数字和下划线", trigger: "blur"},
   ],
   email: [
-    { required: true, message: "请输入邮箱", trigger: "blur" },
-    { type: "email", message: "请输入正确的邮箱格式", trigger: "blur" },
+    {required: true, message: "请输入邮箱", trigger: "blur"},
+    {type: "email", message: "请输入正确的邮箱格式", trigger: "blur"},
   ],
   password: [
-    { required: true, message: "请输入密码", trigger: "blur" },
-    { min: 6, max: 30, message: "密码长度在6到30个字符", trigger: "blur" },
-    { pattern: /^(?=.*[a-zA-Z])(?=.*\d)/, message: "密码需包含字母和数字", trigger: "blur" },
+    {required: true, message: "请输入密码", trigger: "blur"},
+    {min: 6, max: 30, message: "密码长度在6到30个字符", trigger: "blur"},
+    {pattern: /^(?=.*[a-zA-Z])(?=.*\d)/, message: "密码需包含字母和数字", trigger: "blur"},
   ],
   confirmPassword: [
-    { required: true, message: "请确认密码", trigger: "blur" },
+    {required: true, message: "请确认密码", trigger: "blur"},
     {
       validator: (rule, value, callback) => {
         if (value !== registerForm.password) {
@@ -148,14 +149,23 @@ const registerRules = {
 
 const registerFormRef = ref(null);
 
-const handleRegister = () => {
-  registerFormRef.value.validate((valid) => {
-    if (valid) {
-      console.log("注册请求:", registerForm);
-      localStorage.setItem("token", "mock-token");
-      router.push("/detection");
+const handleRegister = async () => {
+  registerFormRef.value.validate(async (valid) => {
+    if (!valid) return
+
+    try {
+      const res = await register(registerForm.username, registerForm.password)
+      if (res.msg === "注册成功") {
+        alert("注册成功！请登录")
+        router.push("/login")
+      } else {
+        alert("注册失败：" + (res.detail || "未知错误"))
+      }
+    } catch (err) {
+      alert("注册失败：服务器错误")
+      console.error(err)
     }
-  });
+  })
 };
 </script>
 

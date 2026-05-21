@@ -64,6 +64,7 @@
 import { ref, reactive } from "vue";
 import { Picture, User, Lock } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
+import { login } from '../api/auth.js';
 
 const router = useRouter();
 
@@ -86,12 +87,26 @@ const loginRules = {
 
 const loginFormRef = ref(null);
 
-const handleLogin = () => {
-  loginFormRef.value.validate((valid) => {
-    if (valid) {
-      console.log("登录请求:", loginForm);
-      localStorage.setItem("token", "mock-token");
-      router.push("/detection");
+// ====== 真实登录逻辑 ======
+const handleLogin = async () => {
+  loginFormRef.value.validate(async (valid) => {
+    if (!valid) return;
+
+    try {
+      // 请求后端真实登录
+      const res = await login(loginForm.username, loginForm.password);
+
+      if (res.access_token) {
+        // 保存真实 token
+        localStorage.setItem("token", res.access_token);
+        alert("登录成功！");
+        router.push("/detection");
+      } else {
+        alert("登录失败：" + (res.detail || "用户名或密码错误"));
+      }
+    } catch (error) {
+      console.error(error);
+      alert("登录失败：服务器连接错误");
     }
   });
 };

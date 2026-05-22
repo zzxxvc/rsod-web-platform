@@ -43,3 +43,5 @@ pillow>=10.0.0
 python-dotenv>=1.0.0
 # NumPy数值计算（ultralytics⾃动安装，此处指定版本范围）
 numpy>=1.23.0,<2.0.0
+python-jose
+passlib[bcrypt]

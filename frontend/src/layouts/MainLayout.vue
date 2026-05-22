@@ -1,6 +1,6 @@
 <template>
   <div class="main-layout">
-    <aside class="sidebar">
+    <aside class="sidebar" v-if="$slots.sidebar">
       <slot name="sidebar"></slot>
     </aside>
 
@@ -52,8 +52,15 @@
 
 .content {
   flex: 1;
-  padding: 24px 32px;
+  padding: 32px;
   overflow-y: auto;
-  background-color: #f0f7f2;
+  background-color: var(--bg-color);
+  display: flex;
+  justify-content: center;
+}
+
+.content > * {
+  width: 100%;
+  max-width: 1120px;
 }
 </style>

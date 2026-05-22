@@ -1,7 +1,7 @@
 <template>
   <router-view v-if="isAuthPage" />
   <MainLayout v-else>
-    <template #sidebar>
+    <template #sidebar v-if="showSidebar">
       <Sidebar />
     </template>
     <template #header>
@@ -25,6 +25,13 @@ const route = useRoute();
 const isAuthPage = computed(() => {
   const authPaths = ["/login", "/register", "/forgot-password"];
   return authPaths.includes(route.path);
+});
+
+const showSidebar = computed(() => {
+  if (isAuthPage.value) return false;
+  // hide global sidebar for pages that use their own left panel
+  const hideFor = ["/detection", "/history", "/qa", "/targets", "/profile"];
+  return !hideFor.includes(route.path);
 });
 </script>
 

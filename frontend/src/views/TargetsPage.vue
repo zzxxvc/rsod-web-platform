@@ -2,15 +2,15 @@
   <div class="targets-page">
     <!-- 页面头部 -->
     <div class="page-header">
-      <h1 class="page-title">目标检测库</h1>
-      <p class="page-subtitle">平台支持检测的所有遥感目标类别</p>
+      <h1 class="page-title">皮肤病变类型库</h1>
+      <p class="page-subtitle">查看常见皮肤病变类别与模型判断依据</p>
     </div>
 
     <!-- 搜索框 -->
     <div class="search-container">
       <el-input
         v-model="searchQuery"
-        placeholder="搜索目标类别..."
+        placeholder="搜索病变类别..."
         size="default"
         class="search-input"
       >
@@ -28,7 +28,7 @@
         </div>
         <div class="stat-info">
           <div class="stat-value">{{ totalTargets }}</div>
-          <div class="stat-label">目标总数</div>
+          <div class="stat-label">病变类型</div>
         </div>
       </div>
       <div class="stat-card">
@@ -37,7 +37,7 @@
         </div>
         <div class="stat-info">
           <div class="stat-value">{{ categories.length }}</div>
-          <div class="stat-label">类别数量</div>
+          <div class="stat-label">分组数量</div>
         </div>
       </div>
     </div>
@@ -70,7 +70,9 @@
             class="target-item"
             @click="showTargetDetail(target)"
           >
-            <el-icon :size="14" class="target-item-icon"><CircleCheck /></el-icon>
+            <el-icon :size="14" class="target-item-icon"
+              ><CircleCheck
+            /></el-icon>
             <span>{{ target.name }}</span>
           </div>
         </div>
@@ -91,13 +93,22 @@
       width="400px"
     >
       <div class="target-detail">
-        <div class="detail-icon" :style="{ backgroundColor: getCategoryColor(selectedTarget.categoryId) }">
-          <el-icon :size="48"><component :is="getCategoryIcon(selectedTarget.categoryId)" /></el-icon>
+        <div
+          class="detail-icon"
+          :style="{
+            backgroundColor: getCategoryColor(selectedTarget.categoryId),
+          }"
+        >
+          <el-icon :size="48"
+            ><component :is="getCategoryIcon(selectedTarget.categoryId)"
+          /></el-icon>
         </div>
         <div class="detail-info">
           <div class="detail-item">
             <span class="detail-label">所属类别</span>
-            <span class="detail-value">{{ getCategoryName(selectedTarget.categoryId) }}</span>
+            <span class="detail-value">{{
+              getCategoryName(selectedTarget.categoryId)
+            }}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">目标描述</span>
@@ -148,54 +159,118 @@ const selectedTarget = ref(null);
 const categories = ref([
   {
     id: 1,
-    name: "交通工具类",
-    icon: Bicycle,
-    color: "#3b82f6",
+    name: "良性病变",
+    icon: PictureRounded,
+    color: "#10b981",
     targets: [
-      { id: 1, name: "飞机", categoryId: 1, description: "各类民航、军用飞机", accuracy: "98.5%" },
-      { id: 2, name: "船舶", categoryId: 1, description: "货轮、客轮、军舰等", accuracy: "97.2%" },
-      { id: 3, name: "汽车", categoryId: 1, description: "各类乘用车、商用车", accuracy: "96.8%" },
-      { id: 4, name: "火车", categoryId: 1, description: "客运、货运列车", accuracy: "95.6%" },
-      { id: 5, name: "卡车", categoryId: 1, description: "大型货运卡车", accuracy: "94.3%" },
+      {
+        id: 1,
+        name: "雀斑",
+        categoryId: 1,
+        description: "常见色素沉着良性病变",
+        accuracy: "96.8%",
+      },
+      {
+        id: 2,
+        name: "痣",
+        categoryId: 1,
+        description: "常见色素痣，通常为良性",
+        accuracy: "97.5%",
+      },
+      {
+        id: 3,
+        name: "脂溢性角化",
+        categoryId: 1,
+        description: "表皮良性增生",
+        accuracy: "95.9%",
+      },
     ],
   },
   {
     id: 2,
-    name: "建筑设施类",
-    icon: OfficeBuilding,
-    color: "#10b981",
+    name: "炎症性病变",
+    icon: Sunny,
+    color: "#f59e0b",
     targets: [
-      { id: 6, name: "油罐", categoryId: 2, description: "储油罐、储气罐", accuracy: "99.1%" },
-      { id: 7, name: "立交桥", categoryId: 2, description: "城市互通立交桥", accuracy: "97.8%" },
-      { id: 8, name: "体育场", categoryId: 2, description: "各类体育场馆", accuracy: "96.4%" },
-      { id: 9, name: "港口", categoryId: 2, description: "海港、河港设施", accuracy: "95.9%" },
-      { id: 10, name: "机场跑道", categoryId: 2, description: "机场起降跑道", accuracy: "98.7%" },
+      {
+        id: 4,
+        name: "湿疹",
+        categoryId: 2,
+        description: "皮肤炎症，常伴瘙痒",
+        accuracy: "94.8%",
+      },
+      {
+        id: 5,
+        name: "银屑病",
+        categoryId: 2,
+        description: "慢性炎症性皮肤病",
+        accuracy: "95.2%",
+      },
+      {
+        id: 6,
+        name: "脂溢性皮炎",
+        categoryId: 2,
+        description: "常见的头皮和面部炎症",
+        accuracy: "94.1%",
+      },
     ],
   },
   {
     id: 3,
-    name: "自然地貌类",
-    icon: Sunny,
-    color: "#f59e0b",
+    name: "色素异常",
+    icon: InfoFilled,
+    color: "#8b5cf6",
     targets: [
-      { id: 11, name: "湖泊", categoryId: 3, description: "天然或人工湖泊", accuracy: "99.5%" },
-      { id: 12, name: "河流", categoryId: 3, description: "江河溪流", accuracy: "98.9%" },
-      { id: 13, name: "森林", categoryId: 3, description: "成片树林", accuracy: "97.6%" },
-      { id: 14, name: "农田", categoryId: 3, description: "耕地、农田", accuracy: "96.2%" },
-      { id: 15, name: "山地", categoryId: 3, description: "山脉、丘陵", accuracy: "95.4%" },
+      {
+        id: 7,
+        name: "黄褐斑",
+        categoryId: 3,
+        description: "色素沉着性病变",
+        accuracy: "96.3%",
+      },
+      {
+        id: 8,
+        name: "白癜风",
+        categoryId: 3,
+        description: "局部色素脱失病变",
+        accuracy: "95.6%",
+      },
+      {
+        id: 9,
+        name: "色素痣",
+        categoryId: 3,
+        description: "色素细胞增多导致的斑点",
+        accuracy: "95.9%",
+      },
     ],
   },
   {
     id: 4,
-    name: "其他目标",
+    name: "肿瘤/可疑病变",
     icon: Setting,
-    color: "#8b5cf6",
+    color: "#3b82f6",
     targets: [
-      { id: 16, name: "风力发电机", categoryId: 4, description: "大型风力发电设施", accuracy: "98.3%" },
-      { id: 17, name: "太阳能板", categoryId: 4, description: "光伏太阳能板", accuracy: "97.1%" },
-      { id: 18, name: "桥梁", categoryId: 4, description: "公路、铁路桥梁", accuracy: "96.7%" },
-      { id: 19, name: "烟囱", categoryId: 4, description: "工业烟囱", accuracy: "95.8%" },
-      { id: 20, name: "储水池", categoryId: 4, description: "蓄水池、水库", accuracy: "94.9%" },
+      {
+        id: 10,
+        name: "基底细胞癌",
+        categoryId: 4,
+        description: "常见的皮肤恶性肿瘤",
+        accuracy: "91.4%",
+      },
+      {
+        id: 11,
+        name: "鳞状细胞癌",
+        categoryId: 4,
+        description: "中度风险的皮肤肿瘤",
+        accuracy: "92.1%",
+      },
+      {
+        id: 12,
+        name: "黑色素瘤",
+        categoryId: 4,
+        description: "高度恶性皮肤肿瘤",
+        accuracy: "89.8%",
+      },
     ],
   },
 ]);
@@ -205,18 +280,25 @@ const filteredCategories = computed(() => {
     return categories.value;
   }
   const query = searchQuery.value.toLowerCase();
-  return categories.value.map((category) => ({
-    ...category,
-    targets: category.targets.filter((target) =>
-      target.name.toLowerCase().includes(query)
-    ),
-  })).filter((category) =>
-    category.name.toLowerCase().includes(query) || category.targets.length > 0
-  );
+  return categories.value
+    .map((category) => ({
+      ...category,
+      targets: category.targets.filter((target) =>
+        target.name.toLowerCase().includes(query),
+      ),
+    }))
+    .filter(
+      (category) =>
+        category.name.toLowerCase().includes(query) ||
+        category.targets.length > 0,
+    );
 });
 
 const totalTargets = computed(() => {
-  return categories.value.reduce((sum, category) => sum + category.targets.length, 0);
+  return categories.value.reduce(
+    (sum, category) => sum + category.targets.length,
+    0,
+  );
 });
 
 const getCategoryColor = (categoryId) => {
@@ -226,7 +308,7 @@ const getCategoryColor = (categoryId) => {
 
 const getCategoryIcon = (categoryId) => {
   const category = categories.value.find((c) => c.id === categoryId);
-  return category ? category.icon : Factory2;
+  return category ? category.icon : PictureRounded;
 };
 
 const getCategoryName = (categoryId) => {
@@ -276,12 +358,10 @@ const showTargetDetail = (target) => {
     .stat-card {
       flex: 1;
       max-width: 200px;
-      background-color: #ffffff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: var(--card-shadow);
-      display: flex;
-      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      padding: 22px;
       gap: 16px;
 
       .stat-icon {
@@ -324,12 +404,12 @@ const showTargetDetail = (target) => {
     gap: 24px;
 
     .category-card {
-      background-color: #ffffff;
-      border-radius: 12px;
-      padding: 20px;
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 22px;
       box-shadow: var(--card-shadow);
-      transition: all 0.2s;
-
+      transition: all 0.2s ease;
       &:hover {
         box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
       }
@@ -375,21 +455,21 @@ const showTargetDetail = (target) => {
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 8px 14px;
-          background-color: #f3f4f6;
+          padding: 10px 16px;
+          background: rgba(255, 255, 255, 0.04);
           border-radius: 20px;
           font-size: 14px;
-          color: var(--text-secondary);
+          color: var(--text-primary);
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.2s ease;
 
           &:hover {
-            background-color: rgba(39, 174, 96, 0.1);
-            color: #27ae60;
+            background: rgba(124, 92, 255, 0.16);
+            color: var(--primary-color);
           }
 
           .target-item-icon {
-            color: #27ae60;
+            color: var(--primary-color);
           }
         }
       }

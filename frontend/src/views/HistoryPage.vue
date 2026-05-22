@@ -2,15 +2,17 @@
   <div class="history-page">
     <!-- 页面头部 -->
     <div class="page-header">
-      <h1 class="page-title">检测历史记录</h1>
-      <p class="page-subtitle">查看和管理您的所有检测记录</p>
+      <h1 class="page-title">诊断历史记录</h1>
+      <p class="page-subtitle">
+        查看皮肤病变诊断历史，定位高风险病例与复诊建议
+      </p>
     </div>
 
     <!-- 搜索和筛选 -->
     <div class="search-bar">
       <el-input
         v-model="searchQuery"
-        placeholder="搜索检测记录..."
+        placeholder="搜索诊断记录..."
         size="default"
         class="search-input"
       >
@@ -33,15 +35,15 @@
 
       <el-select
         v-model="filterType"
-        placeholder="类型筛选"
+        placeholder="诊断类型"
         size="default"
         class="filter-select"
       >
         <el-option label="全部" value="" />
-        <el-option label="单图检测" value="single" />
-        <el-option label="批量检测" value="batch" />
-        <el-option label="文件夹" value="folder" />
-        <el-option label="视频检测" value="video" />
+        <el-option label="单次诊断" value="single" />
+        <el-option label="批量诊断" value="batch" />
+        <el-option label="病例库" value="folder" />
+        <el-option label="AI 辅助" value="video" />
       </el-select>
     </div>
 
@@ -59,10 +61,7 @@
             :alt="record.filename"
             class="preview-image"
           />
-          <div
-            class="status-badge"
-            :class="record.status"
-          >
+          <div class="status-badge" :class="record.status">
             <el-icon><component :is="getStatusIcon(record.status)" /></el-icon>
             {{ getStatusText(record.status) }}
           </div>
@@ -100,11 +99,11 @@
 
         <div class="record-actions">
           <el-button size="small" @click.stop="viewRecord(record)">
-            <el-icon><Monitor/></el-icon>
+            <el-icon><Monitor /></el-icon>
             查看
           </el-button>
           <el-button size="small" @click.stop="downloadRecord(record)">
-            <el-icon><Download/></el-icon>
+            <el-icon><Download /></el-icon>
             下载
           </el-button>
           <el-button
@@ -112,7 +111,7 @@
             type="danger"
             @click.stop="deleteRecord(record)"
           >
-            <el-icon><Delete/></el-icon>
+            <el-icon><Delete /></el-icon>
             删除
           </el-button>
         </div>
@@ -182,12 +181,12 @@ const loadHistory = async () => {
     if (res.success && Array.isArray(res.data)) {
       historyRecords.value = res.data.map((item) => ({
         id: item.id,
-        filename: item.image_url.split('/').pop() || item.id,
+        filename: item.image_url.split("/").pop() || item.id,
         image: item.result_image_url.startsWith("http")
           ? item.result_image_url
           : `${apiBaseUrl}${item.result_image_url}`,
-        type: 'single',
-        status: 'completed',
+        type: "single",
+        status: "completed",
         time: new Date(item.created_at).toLocaleString(),
         count: 1,
         targets: item.total_objects,
@@ -195,7 +194,7 @@ const loadHistory = async () => {
       }));
     }
   } catch (error) {
-    console.error('加载检测历史失败:', error);
+    console.error("加载检测历史失败:", error);
   }
 };
 
@@ -208,7 +207,8 @@ const filteredRecords = computed(() => {
     const matchesSearch =
       !searchQuery.value ||
       record.filename.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const matchesStatus = !filterStatus.value || record.status === filterStatus.value;
+    const matchesStatus =
+      !filterStatus.value || record.status === filterStatus.value;
     const matchesType = !filterType.value || record.type === filterType.value;
     return matchesSearch && matchesStatus && matchesType;
   });
@@ -236,10 +236,10 @@ const getStatusText = (status) => {
 
 const getTypeText = (type) => {
   const texts = {
-    single: "单图检测",
-    batch: "批量检测",
-    folder: "文件夹",
-    video: "视频检测",
+    single: "单次诊断",
+    batch: "批量诊断",
+    folder: "病例库",
+    video: "AI 辅助",
   };
   return texts[type] || type;
 };
@@ -299,11 +299,11 @@ const handlePageChange = (page) => {
 
     .search-input {
       flex: 1;
-      max-width: 300px;
+      max-width: 320px;
     }
 
     .filter-select {
-      width: 140px;
+      width: 150px;
     }
   }
 
@@ -314,27 +314,29 @@ const handlePageChange = (page) => {
   }
 
   .history-card {
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 20px;
+    background: var(--card-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 22px;
     box-shadow: var(--card-shadow);
     display: flex;
     align-items: center;
     gap: 20px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
 
     &:hover {
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 18px 40px rgba(8, 15, 40, 0.18);
       transform: translateY(-2px);
     }
 
     .record-preview {
       position: relative;
-      width: 120px;
-      height: 80px;
-      border-radius: 8px;
+      width: 130px;
+      height: 92px;
+      border-radius: 18px;
       overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
 
       .preview-image {
         width: 100%;
@@ -387,11 +389,11 @@ const handlePageChange = (page) => {
         }
 
         .record-type {
-          padding: 3px 8px;
-          background-color: #f3f4f6;
-          border-radius: 4px;
+          padding: 5px 12px;
+          background: rgba(124, 92, 255, 0.14);
+          border-radius: 999px;
           font-size: 12px;
-          color: var(--text-secondary);
+          color: var(--primary-color);
         }
       }
 
@@ -419,10 +421,10 @@ const handlePageChange = (page) => {
         gap: 6px;
 
         .detected-tag {
-          padding: 3px 8px;
-          background-color: rgba(39, 174, 96, 0.1);
-          color: #27ae60;
-          border-radius: 4px;
+          padding: 4px 10px;
+          background: rgba(57, 217, 201, 0.16);
+          color: #39d9c9;
+          border-radius: 999px;
           font-size: 12px;
         }
       }

@@ -89,34 +89,66 @@
     <el-dialog
       v-if="selectedTarget"
       :title="selectedTarget.name"
-      :visible.sync="showDialog"
-      width="400px"
+      v-model="showDialog"
+      width="600px"
+      class="target-detail-dialog"
     >
       <div class="target-detail">
-        <div
-          class="detail-icon"
-          :style="{
-            backgroundColor: getCategoryColor(selectedTarget.categoryId),
-          }"
-        >
-          <el-icon :size="48"
-            ><component :is="getCategoryIcon(selectedTarget.categoryId)"
-          /></el-icon>
+        <!-- 病变图片 -->
+        <div class="detail-image-container">
+          <div v-if="selectedTarget.image" class="detail-image">
+            <el-image
+              :src="selectedTarget.image"
+              :preview-src-list="[selectedTarget.image]"
+              fit="cover"
+              class="lesion-image"
+            >
+              <template #error>
+                <div class="image-error">
+                  <el-icon :size="48"><PictureRounded /></el-icon>
+                  <span>暂无图片</span>
+                </div>
+              </template>
+            </el-image>
+          </div>
+          <div v-else class="detail-image placeholder">
+            <el-icon :size="64"><PictureRounded /></el-icon>
+            <span>暂无图例</span>
+          </div>
         </div>
+
+        <!-- 病变信息 -->
         <div class="detail-info">
           <div class="detail-item">
             <span class="detail-label">所属类别</span>
-            <span class="detail-value">{{
-              getCategoryName(selectedTarget.categoryId)
+            <span class="detail-value">
+              <el-tag
+                :color="getCategoryColor(selectedTarget.categoryId)"
+                size="small"
+              >
+                {{ getCategoryName(selectedTarget.categoryId) }}
+              </el-tag>
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">病变描述</span>
+            <span class="detail-value description">{{
+              selectedTarget.description
             }}</span>
           </div>
-          <div class="detail-item">
-            <span class="detail-label">目标描述</span>
-            <span class="detail-value">{{ selectedTarget.description }}</span>
-          </div>
-          <div class="detail-item">
+          <div class="detail-item" v-if="selectedTarget.accuracy">
             <span class="detail-label">检测精度</span>
-            <span class="detail-value">{{ selectedTarget.accuracy }}</span>
+            <span class="detail-value">
+              <el-tag type="success" size="small">{{
+                selectedTarget.accuracy
+              }}</el-tag>
+            </span>
+          </div>
+          <div class="detail-item" v-if="selectedTarget.features">
+            <span class="detail-label">主要特征</span>
+            <span class="detail-value features">{{
+              selectedTarget.features
+            }}</span>
           </div>
         </div>
       </div>
@@ -132,22 +164,8 @@ import {
   Grid,
   CircleCheck,
   Help,
-  Document,
-  Ship,
-  Van,
-  Guide,
-  Bicycle,
-  OfficeBuilding,
-  Shop,
-  School,
-  MapLocation,
-  Coordinate,
-  Place,
-  AddLocation,
-  Location,
   PictureRounded,
   Sunny,
-  ArrowRight,
   Setting,
   InfoFilled,
 } from "@element-plus/icons-vue";
@@ -155,6 +173,17 @@ import {
 const searchQuery = ref("");
 const showDialog = ref(false);
 const selectedTarget = ref(null);
+
+// 图片放在 /frontend/images/ 目录下
+const lesionsImages = {
+  1: "/images/光化性角化病.jpg",
+  2: "/images/基底细胞癌.jpg",
+  3: "/images/良性角化病.jpg",
+  4: "/images/皮肤纤维瘤.jpg",
+  5: "/images/黑色素瘤.jpg",
+  6: "/images/黑色素细胞痣.jpg",
+  7: "/images/血管性病变.jpg",
+};
 
 const categories = ref([
   {
@@ -165,111 +194,68 @@ const categories = ref([
     targets: [
       {
         id: 1,
-        name: "雀斑",
+        name: "光化性角化病",
         categoryId: 1,
-        description: "常见色素沉着良性病变",
-        accuracy: "96.8%",
-      },
-      {
-        id: 2,
-        name: "痣",
-        categoryId: 1,
-        description: "常见色素痣，通常为良性",
-        accuracy: "97.5%",
+        description: "...",
+        image: lesionsImages[1],
       },
       {
         id: 3,
-        name: "脂溢性角化",
+        name: "良性角化病",
         categoryId: 1,
-        description: "表皮良性增生",
-        accuracy: "95.9%",
+        description: "...",
+        image: lesionsImages[3],
+      },
+      {
+        id: 4,
+        name: "皮肤纤维瘤",
+        categoryId: 1,
+        description: "...",
+        image: lesionsImages[4],
+      },
+      {
+        id: 6,
+        name: "黑色素细胞痣",
+        categoryId: 1,
+        description: "...",
+        image: lesionsImages[6],
       },
     ],
   },
   {
     id: 2,
-    name: "炎症性病变",
-    icon: Sunny,
-    color: "#f59e0b",
+    name: "恶性病变",
+    icon: PictureRounded,
+    color: "#f59e42",
     targets: [
       {
-        id: 4,
-        name: "湿疹",
+        id: 2,
+        name: "基底细胞癌",
         categoryId: 2,
-        description: "皮肤炎症，常伴瘙痒",
-        accuracy: "94.8%",
+        description: "...",
+        image: lesionsImages[2],
       },
       {
         id: 5,
-        name: "银屑病",
+        name: "黑色素瘤",
         categoryId: 2,
-        description: "慢性炎症性皮肤病",
-        accuracy: "95.2%",
-      },
-      {
-        id: 6,
-        name: "脂溢性皮炎",
-        categoryId: 2,
-        description: "常见的头皮和面部炎症",
-        accuracy: "94.1%",
+        description: "...",
+        image: lesionsImages[5],
       },
     ],
   },
   {
     id: 3,
-    name: "色素异常",
-    icon: InfoFilled,
-    color: "#8b5cf6",
-    targets: [
-      {
-        id: 7,
-        name: "黄褐斑",
-        categoryId: 3,
-        description: "色素沉着性病变",
-        accuracy: "96.3%",
-      },
-      {
-        id: 8,
-        name: "白癜风",
-        categoryId: 3,
-        description: "局部色素脱失病变",
-        accuracy: "95.6%",
-      },
-      {
-        id: 9,
-        name: "色素痣",
-        categoryId: 3,
-        description: "色素细胞增多导致的斑点",
-        accuracy: "95.9%",
-      },
-    ],
-  },
-  {
-    id: 4,
-    name: "肿瘤/可疑病变",
-    icon: Setting,
+    name: "血管性病变",
+    icon: PictureRounded,
     color: "#3b82f6",
     targets: [
       {
-        id: 10,
-        name: "基底细胞癌",
-        categoryId: 4,
-        description: "常见的皮肤恶性肿瘤",
-        accuracy: "91.4%",
-      },
-      {
-        id: 11,
-        name: "鳞状细胞癌",
-        categoryId: 4,
-        description: "中度风险的皮肤肿瘤",
-        accuracy: "92.1%",
-      },
-      {
-        id: 12,
-        name: "黑色素瘤",
-        categoryId: 4,
-        description: "高度恶性皮肤肿瘤",
-        accuracy: "89.8%",
+        id: 7,
+        name: "血管性病变",
+        categoryId: 3,
+        description: "...",
+        image: lesionsImages[7],
       },
     ],
   },
@@ -283,8 +269,10 @@ const filteredCategories = computed(() => {
   return categories.value
     .map((category) => ({
       ...category,
-      targets: category.targets.filter((target) =>
-        target.name.toLowerCase().includes(query),
+      targets: category.targets.filter(
+        (target) =>
+          target.name.toLowerCase().includes(query) ||
+          target.description.toLowerCase().includes(query),
       ),
     }))
     .filter(
@@ -304,11 +292,6 @@ const totalTargets = computed(() => {
 const getCategoryColor = (categoryId) => {
   const category = categories.value.find((c) => c.id === categoryId);
   return category ? category.color : "#6b7280";
-};
-
-const getCategoryIcon = (categoryId) => {
-  const category = categories.value.find((c) => c.id === categoryId);
-  return category ? category.icon : PictureRounded;
 };
 
 const getCategoryName = (categoryId) => {
@@ -493,46 +476,101 @@ const showTargetDetail = (target) => {
       color: var(--text-secondary);
     }
   }
+}
 
-  .target-detail {
+// 弹窗样式
+.target-detail-dialog {
+  :deep(.el-dialog__header) {
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 12px;
+  }
+}
+
+.target-detail {
+  .detail-image-container {
+    margin-bottom: 24px;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px 0;
+    justify-content: center;
+  }
 
-    .detail-icon {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
+  .detail-image {
+    width: 100%;
+    max-width: 400px;
+    height: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+
+    &.placeholder {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: white;
-      margin-bottom: 20px;
+      background: #f5f7fa;
+      color: #909399;
+
+      span {
+        margin-top: 12px;
+        font-size: 14px;
+      }
     }
 
-    .detail-info {
+    .lesion-image {
       width: 100%;
+      height: 100%;
+    }
 
-      .detail-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 12px 0;
-        border-bottom: 1px solid #f3f4f6;
+    .image-error {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #909399;
 
-        &:last-child {
-          border-bottom: none;
+      span {
+        margin-top: 8px;
+        font-size: 14px;
+      }
+    }
+  }
+
+  .detail-info {
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 14px 0;
+      border-bottom: 1px solid #f3f4f6;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .detail-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+        font-weight: 500;
+        min-width: 80px;
+      }
+
+      .detail-value {
+        font-size: 14px;
+        color: var(--text-primary);
+        font-weight: 500;
+        flex: 1;
+        text-align: right;
+
+        &.description {
+          text-align: left;
+          line-height: 1.8;
+          color: var(--text-regular);
         }
 
-        .detail-label {
-          font-size: 14px;
-          color: var(--text-secondary);
-        }
-
-        .detail-value {
-          font-size: 14px;
-          color: var(--text-primary);
-          font-weight: 500;
+        &.features {
+          text-align: left;
+          line-height: 1.6;
+          color: var(--text-regular);
         }
       }
     }

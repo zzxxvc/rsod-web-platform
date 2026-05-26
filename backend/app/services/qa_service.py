@@ -31,44 +31,51 @@ async def get_qa_answer(question: str) -> str:
 
 async def _get_bailian_answer(question: str) -> str:
     """
-    通过阿里云百炼 API 获取回答
+    通过阿里云百炼 dashscope SDK 获取回答
+    ✅ 使用已验证成功的配置：qwen-turbo + Generation.call + prompt
     """
+    import dashscope
+    import os
+    
     api_key = os.getenv("BAILIAN_API_KEY")
     if not api_key:
         return "错误：未配置 BAILIAN_API_KEY 环境变量"
     
+    # 🔑 关键：主线程绑定 Key（dashscope 使用全局变量）
+    dashscope.api_key = api_key
+    
     try:
-        # 在线程池中运行同步的 OpenAI 调用
         loop = asyncio.get_event_loop()
         
-        def call_bailian():
-            client = OpenAI(
-                api_key=api_key,
-                base_url="https://api.bailian.aliyun.com/v1"
-            )
+        def call_dashscope():
+            # 🔥 子线程内也绑定一次，确保 100% 可靠（子线程不继承主线程全局变量）
+            dashscope.api_key = os.getenv("BAILIAN_API_KEY")
             
-            response = client.chat.completions.create(
-                model="qwen-max",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "你是一个专业的皮肤病变诊断助手。请根据用户的描述，提供有用的诊断建议、可能的病变类型和复诊建议。"
-                    },
-                    {
-                        "role": "user",
-                        "content": question
-                    }
-                ],
-                temperature=0.7,
-                max_tokens=2000
+            # ✅ 使用已验证成功的配置
+            return dashscope.Generation.call(
+                model="qwen-turbo",  # ✅ 已验证能通的模型
+                prompt=question,     # ✅ Generation 接口用 prompt 参数
+                timeout=60           # 延长超时，防止网络波动
             )
-            
-            return response.choices[0].message.content
         
-        return await loop.run_in_executor(None, call_bailian)
-    
+        # 在线程池执行同步调用，避免阻塞 FastAPI 事件循环
+        response = await loop.run_in_executor(None, call_dashscope)
+        
+        # ✅ Generation 接口返回结构：response.output.text
+        if response.status_code == 200:
+            return response.output.text
+        else:
+            # 返回阿里云业务错误码，方便排查
+            return f"AI 服务报错: {response.code} - {response.message}"
+            
     except Exception as e:
-        return f"抱歉，调用 AI 服务出错: {str(e)}"
+        # 🔥 打印完整堆栈到终端，方便后续调试
+        import traceback
+        print(f"\n❌ [ERROR] dashscope 调用失败 - 完整堆栈:")
+        traceback.print_exc()
+        print(f"❌ [ERROR] 简要: {type(e).__name__}: {e}\n")
+        
+        return f"调用大模型异常: {str(e)}"
 
 
 def _get_mock_answer(question: str) -> str:

@@ -1,4 +1,5 @@
 import os
+import traceback  # 👈 引入堆栈打印工具
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from app.services.detection_service import detection_service
 from app.utils.file_utils import save_upload_file, ensure_directories
@@ -28,6 +29,7 @@ async def detect_single_image(
         filename = await save_upload_file(file, settings.UPLOAD_DIR)
         image_path = os.path.join(settings.UPLOAD_DIR, filename)
         
+        # 🚀 真正的算法和模型推理核心在这句，崩溃概率最高
         result = detection_service.detect_single_image(image_path, model_name)
 
         history_item = HistoryItem(
@@ -47,6 +49,12 @@ async def detect_single_image(
             data=result
         )
     except Exception as e:
+        # 🔥 关键修改：强行在运行 uvicorn 的 CMD 终端里打印出最详细的报错原因
+        print("\n" + "="*50 + "【YOLO 检测核心服务报错】" + "="*50)
+        traceback.print_exc()
+        print("="*124 + "\n")
+        
+        # 依然抛出 500 保证前端不会无响应
         raise HTTPException(status_code=500, detail=f"检测失败: {str(e)}")
 
 

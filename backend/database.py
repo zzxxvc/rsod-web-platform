@@ -1,10 +1,14 @@
 # database.py
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base
 
-# 固定用 skin.db，不再变！
-DB_URL = "sqlite:///./skin.db"
+# 获取当前文件所在目录（backend/），然后定位到项目根目录
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
+DB_PATH = os.path.join(PROJECT_ROOT, "backend", "skin.db")
+DB_URL = f"sqlite:///{DB_PATH.replace(os.sep, '/')}"
 
 engine = create_engine(
     DB_URL,

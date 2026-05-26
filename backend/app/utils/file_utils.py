@@ -4,6 +4,7 @@ from app.config import settings
 
 def ensure_directories():
     """确保必要的目录存在"""
+    # settings中的路径已经是绝对路径
     os.makedirs(settings.STATIC_DIR, exist_ok=True)
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.RESULT_DIR, exist_ok=True)

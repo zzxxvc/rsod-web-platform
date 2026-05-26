@@ -27,7 +27,6 @@
         </div>
 
         <div class="upload-card">
-          <div class="upload-card-title">提交数据 ({ modeLabel })</div>
           <p class="upload-card-desc">
             选择上传方式：单张图像、批量图像、视频文件，或开启摄像头实时检测。
           </p>

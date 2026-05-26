@@ -1,6 +1,6 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
+  --text: #000000;
+  --text-h: #000000;
   --bg: #fff;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
@@ -11,14 +11,32 @@
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --text-primary: #000000;
+  --text-secondary: rgba(0, 0, 0, 0.87);
+  --bg: #ffffff;
+  --bg-color: #f6fbf8;
+  --surface-color: #ffffff;
+  --surface-muted: #fbfdfa;
+  --panel-bg: #ffffff;
+  --panel-border: rgba(0, 0, 0, 0.06);
+  --card-bg: #ffffff;
+  --primary-color: #7c5cff;
+  --primary-light: rgba(124, 92, 255, 0.14);
+  --secondary-color: #39d9c9;
+  --success-color: #56e39f;
+  --danger-color: #ff6f86;
+  --hover-color: rgba(0, 0, 0, 0.04);
+  --shadow-color: rgba(16, 24, 40, 0.08);
+  --card-shadow: 0 12px 30px rgba(16, 24, 40, 0.06);
+
+  --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
   color-scheme: light dark;
-  color: var(--text);
+  color: var(--text-primary);
   background: var(--bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -32,17 +50,24 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
+    --text: #000000;
+    --text-h: #000000;
+    --text-primary: #000000;
+    --text-secondary: rgba(0, 0, 0, 0.87);
+    --bg: #ffffff;
+    --border: #e5e4e7;
+    --code-bg: #f4f3ec;
     --accent: #c084fc;
     --accent-bg: rgba(192, 132, 252, 0.15);
     --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
+    --social-bg: rgba(244, 243, 236, 0.5);
     --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+      rgba(0, 0, 0, 0.08) 0 10px 15px -3px, rgba(0, 0, 0, 0.04) 0 4px 6px -2px;
+    --panel-bg: #ffffff;
+    --card-bg: #ffffff;
+    --panel-border: rgba(0, 0, 0, 0.06);
+    --text-primary: #000000;
+    --text-secondary: rgba(0, 0, 0, 0.87);
   }
 
   #social .button-icon {
@@ -160,12 +185,14 @@ code {
   width: 1126px;
   max-width: 100%;
   margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
+  text-align: left;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  background:
+    linear-gradient(180deg, rgba(124, 92, 255, 0.03), rgba(57, 217, 201, 0.02)),
+    var(--bg-color);
 }
 
 #center {
@@ -279,7 +306,7 @@ code {
 
   &::before,
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     top: -4.5px;
     border: 5px solid transparent;

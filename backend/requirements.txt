@@ -10,6 +10,9 @@ python-multipart>=0.0.6
 # 数据验证和配置管理
 pydantic>=2.5.0
 pydantic-settings>=2.1.0
+# JWT 与密码哈希（登录注册）
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
 # =============================================================================
 # 数据库
 # =============================================================================
@@ -43,7 +46,12 @@ pillow>=10.0.0
 python-dotenv>=1.0.0
 # NumPy数值计算（ultralytics⾃动安装，此处指定版本范围）
 numpy>=1.23.0,<2.0.0
+<<<<<<< HEAD
 # JWT 认证依赖
 python-jose[cryptography]
 passlib
 bcrypt
+=======
+python-jose
+passlib[bcrypt]
+>>>>>>> 7494deb0c09979f336fb99776ad58862e8152850

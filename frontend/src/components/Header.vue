@@ -1,9 +1,18 @@
 <template>
   <div class="header-container">
-    <div class="breadcrumbs">
-      <el-icon class="breadcrumb-icon"><House /></el-icon>
-      <span class="breadcrumb-separator">/</span>
-      <span class="breadcrumb-text">智能检测</span>
+    <div class="top-nav">
+      <el-menu
+        mode="horizontal"
+        :default-active="activePath"
+        @select="onSelect"
+        class="top-menu"
+      >
+        <el-menu-item index="/detection">智能检测</el-menu-item>
+        <el-menu-item index="/history">历史记录</el-menu-item>
+        <el-menu-item index="/qa">AI问答</el-menu-item>
+        <el-menu-item index="/targets">目标库</el-menu-item>
+        <el-menu-item index="/profile">个人中心</el-menu-item>
+      </el-menu>
     </div>
 
     <div class="header-actions">
@@ -16,7 +25,7 @@
         <el-icon class="action-icon"><Grid /></el-icon>
         <el-icon class="action-icon"><Bell /></el-icon>
         <el-icon class="action-icon"><QuestionFilled /></el-icon>
-        <div class="user-dropdown">
+        <div class="user-dropdown" @click="goProfile">
           <el-avatar class="user-avatar" size="32">
             <img
               src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
@@ -43,6 +52,19 @@ import {
   CaretBottom,
   House,
 } from "@element-plus/icons-vue";
+import { useRouter, useRoute } from "vue-router";
+
+const router = useRouter();
+const route = useRoute();
+const activePath = route.path;
+
+const onSelect = (index) => {
+  if (index) router.push(index);
+};
+
+const goProfile = () => {
+  router.push("/profile");
+};
 </script>
 
 <style scoped>
@@ -51,6 +73,17 @@ import {
   align-items: center;
   justify-content: space-between;
   width: 100%;
+}
+
+.top-nav .el-menu {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.top-nav .el-menu-item {
+  white-space: nowrap;
+  padding: 8px 12px;
 }
 
 .breadcrumbs {

@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 import os
+from pathlib import Path
 
 
 class Settings(BaseModel):
@@ -15,11 +16,22 @@ class Settings(BaseModel):
     UPLOAD_DIR: str = "static/uploads"
     RESULT_DIR: str = "static/results"
     
-    YOLO_MODEL_PATH: str = "app/models/yolo11n.pt"
+    YOLO_MODEL_PATH: str = ""
     CONFIDENCE_THRESHOLD: float = 0.5
     IOU_THRESHOLD: float = 0.45
     
     CORS_ORIGINS: list = ["http://localhost:5173", "http://localhost:3000"]
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        if not self.YOLO_MODEL_PATH:
+            backend_dir = Path(__file__).parent.parent
+            project_root = backend_dir.parent
+            model_path = project_root / "yolo11n.pt"
+            if model_path.exists():
+                self.YOLO_MODEL_PATH = str(model_path)
+            else:
+                self.YOLO_MODEL_PATH = "yolo11n.pt"
 
 
 def get_settings() -> Settings:

@@ -17,8 +17,8 @@
             />
           </el-avatar>
           <div class="user-basic-info">
-            <div class="user-name">皮肤诊断医生</div>
-            <div class="user-role">皮肤科专家</div>
+            <div class="user-name">{{ userInfo.username || "用户" }}</div>
+            <div class="user-role">{{ userInfo.email || "未设置邮箱" }}</div>
             <el-button
               size="small"
               type="primary"
@@ -27,25 +27,26 @@
             >
               编辑资料
             </el-button>
+            <div class="user-meta">注册时间：{{ userInfo.create_time || "未知" }}</div>
           </div>
         </div>
       </div>
 
       <div class="stats-cards">
         <div class="stat-card">
-          <div class="stat-value">128</div>
+          <div class="stat-value">{{ userInfo.detection_count }}</div>
           <div class="stat-label">总诊断次数</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">24</div>
-          <div class="stat-label">高危病例</div>
+          <div class="stat-value">{{ userInfo.conversation_count }}</div>
+          <div class="stat-label">会话数量</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">93.7%</div>
+          <div class="stat-value">--</div>
           <div class="stat-label">平均准确率</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">52</div>
+          <div class="stat-value">--</div>
           <div class="stat-label">使用天数</div>
         </div>
       </div>
@@ -53,7 +54,33 @@
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import { ref, onMounted } from "vue"
+import { getProfile } from "../api/auth.js"
+
+const userInfo = ref({
+  username: "",
+  email: "",
+  create_time: "",
+  detection_count: 0,
+  conversation_count: 0,
+})
+
+const loadProfile = async () => {
+  try {
+    const res = await getProfile()
+    if (res.success && res.data) {
+      userInfo.value = res.data
+    }
+  } catch (error) {
+    console.error("加载用户信息失败:", error)
+  }
+}
+
+onMounted(() => {
+  loadProfile()
+})
+</script>
 
 <style scoped lang="scss">
 .profile-page {

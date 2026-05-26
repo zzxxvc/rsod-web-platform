@@ -160,6 +160,7 @@ import {
   CircleClose,
 } from "@element-plus/icons-vue";
 import { getDetectionHistory } from "../api/detection";
+import { staticUrl } from "../config/api";
 
 const router = useRouter();
 
@@ -171,10 +172,6 @@ const pageSize = ref(10);
 
 const historyRecords = ref([]);
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
-  ? import.meta.env.VITE_API_BASE_URL.replace(/\/api$/, "")
-  : "http://localhost:8000";
-
 const loadHistory = async () => {
   try {
     const res = await getDetectionHistory();
@@ -184,7 +181,7 @@ const loadHistory = async () => {
         filename: item.image_url.split("/").pop() || item.id,
         image: item.result_image_url.startsWith("http")
           ? item.result_image_url
-          : `${apiBaseUrl}${item.result_image_url}`,
+          : staticUrl(item.result_image_url),
         type: "single",
         status: "completed",
         time: new Date(item.created_at).toLocaleString(),

@@ -1,27 +1,63 @@
 import os
+from dataclasses import dataclass
+
 from app.config import settings
 
 
+@dataclass(frozen=True)
+class SavedUpload:
+    """磁盘绝对路径（给 YOLO）+ 仅文件名（给静态 URL）。"""
+
+    absolute_path: str
+    filename: str
+
+
 def ensure_directories():
-    """确保必要的目录存在"""
-    # settings中的路径已经是绝对路径
     os.makedirs(settings.STATIC_DIR, exist_ok=True)
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
     os.makedirs(settings.RESULT_DIR, exist_ok=True)
 
 
-async def save_upload_file(file, destination_dir):
-    """保存上传的文件"""
+def _extension_from_upload(file) -> str:
+    name = getattr(file, "filename", None) or ""
+    ext = os.path.splitext(os.path.basename(name))[1].lower()
+    if ext in {".jpg", ".jpeg", ".png", ".webp", ".bmp"}:
+        return ".jpg" if ext == ".jpeg" else ext
+    content_type = getattr(file, "content_type", "") or ""
+    if "png" in content_type:
+        return ".png"
+    if "webp" in content_type:
+        return ".webp"
+    return ".jpg"
+
+
+async def save_upload_file(file, destination_dir: str) -> SavedUpload:
+    """
+    保存 multipart 上传的二进制内容。
+    返回绝对路径供推理使用；禁止把 URL 或客户端路径当作文件内容。
+    """
     ensure_directories()
-    filename = f"temp_{os.urandom(16).hex()}.jpg"
-    file_path = os.path.join(destination_dir, filename)
+    dest_dir = os.path.abspath(destination_dir)
+    os.makedirs(dest_dir, exist_ok=True)
 
-    with open(file_path, "wb") as f:
-        f.write(await file.read())
+    content = await file.read()
+    if not content:
+        raise ValueError("上传文件为空，请确认前端使用 FormData.append('file', file对象) 而非路径字符串")
 
-    return filename
+    ext = _extension_from_upload(file)
+    filename = f"temp_{os.urandom(16).hex()}{ext}"
+    absolute_path = os.path.join(dest_dir, filename)
+
+    with open(absolute_path, "wb") as f:
+        f.write(content)
+
+    if os.path.getsize(absolute_path) == 0:
+        raise ValueError("保存后的图像文件大小为 0")
+
+    return SavedUpload(absolute_path=absolute_path, filename=filename)
 
 
-def get_file_url(filename, subdir):
-    """获取文件的访问URL"""
-    return f"/{subdir}/{filename}"
+def get_file_url(filename: str, subdir: str) -> str:
+    """返回浏览器可访问的相对 URL，绝不返回磁盘绝对路径。"""
+    safe_name = os.path.basename(filename)
+    return f"/{subdir.strip('/')}/{safe_name}"

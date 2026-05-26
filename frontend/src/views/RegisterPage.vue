@@ -154,12 +154,16 @@ const handleRegister = async () => {
     if (!valid) return
 
     try {
-      const res = await register(registerForm.username, registerForm.password)
+      const res = await register(
+        registerForm.username,
+        registerForm.email,
+        registerForm.password
+      )
       if (res.msg === "注册成功") {
         alert("注册成功！请登录")
         router.push("/login")
       } else {
-        alert("注册失败：" + (res.detail || "未知错误"))
+        alert("注册失败：" + (res.error || res.detail || "未知错误"))
       }
     } catch (err) {
       alert("注册失败：服务器错误")

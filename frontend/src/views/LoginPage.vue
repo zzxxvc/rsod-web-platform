@@ -97,12 +97,11 @@ const handleLogin = async () => {
       const res = await login(loginForm.username, loginForm.password);
 
       if (res.access_token) {
-        // 保存真实 token
         localStorage.setItem("token", res.access_token);
         alert("登录成功！");
         router.push("/detection");
       } else {
-        alert("登录失败：" + (res.detail || "用户名或密码错误"));
+        alert("登录失败：" + (res.error || res.detail || "用户名或密码错误"));
       }
     } catch (error) {
       console.error(error);

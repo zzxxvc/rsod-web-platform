@@ -1,5 +1,7 @@
+# main.py
 from datetime import datetime, timedelta
 from typing import Optional
+from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,11 +14,28 @@ from sqlalchemy.orm import Session
 from app.api.detection import router as detection_router
 from app.config import settings
 from app.utils.file_utils import ensure_directories
-from database import create_tables, get_db
-from models import Conversation, Message, User
+from database import get_db, Base, engine, create_tables
+from database.models import User, Conversation, Message
 
+# 导入所有模型以确保表被创建
+from database import models
+
+# 确保目录存在
 ensure_directories()
+
+# 创建数据库表
 create_tables()
+
+import logging
+
+from app.services.detection_service import detection_service
+
+_logger = logging.getLogger(__name__)
+_det_ok, _det_msg = detection_service.readiness()
+if _det_ok:
+    _logger.info("检测服务就绪: %s", settings.YOLO_MODEL_PATH)
+else:
+    _logger.warning("检测服务未就绪: %s", _det_msg)
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -33,6 +52,7 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
+# 与前端 baseURL（/api）对齐：/api/detection/...
 app.include_router(detection_router, prefix="/api")
 
 # --- 认证配置 ---
@@ -40,7 +60,7 @@ SECRET_KEY = "your-secret-key-here-keep-it-safe"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
@@ -63,8 +83,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db),
+        token: str = Depends(oauth2_scheme),
+        db: Session = Depends(get_db),
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -99,26 +119,41 @@ async def health_check():
 
 
 @app.post("/register")
-def register(username: str, password: str, db: Session = Depends(get_db)):
+def register(
+        username: str,
+        email: str,
+        password: str,
+        db: Session = Depends(get_db)
+):
+    # 检查用户名是否存在
     existing_user = db.query(User).filter(User.username == username).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="用户名已存在")
 
+    # 检查邮箱是否存在
+    existing_email = db.query(User).filter(User.email == email).first()
+    if existing_email:
+        raise HTTPException(status_code=400, detail="邮箱已被注册")
+
     hashed_password = get_password_hash(password)
-    new_user = User(username=username, password=hashed_password)
+    new_user = User(
+        username=username,
+        email=email,
+        password_hash=hashed_password
+    )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {"msg": "注册成功", "user_id": new_user.id}
+    return {"msg": "注册成功", "user_id": str(new_user.id)}
 
 
 @app.post("/token")
 def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
+        form_data: OAuth2PasswordRequestForm = Depends(),
+        db: Session = Depends(get_db),
 ):
     user = db.query(User).filter(User.username == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.password):
+    if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名或密码错误",
@@ -133,17 +168,17 @@ def login_for_access_token(
 
 @app.get("/conversations")
 def get_my_conversations(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
 ):
     return db.query(Conversation).filter(Conversation.user_id == current_user.id).all()
 
 
 @app.post("/conversations")
 def create_conversation(
-    title: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+        title: str,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
 ):
     new_conv = Conversation(title=title, user_id=current_user.id)
     db.add(new_conv)
@@ -154,9 +189,9 @@ def create_conversation(
 
 @app.get("/conversations/{conv_id}/messages")
 def get_messages(
-    conv_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+        conv_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
 ):
     conv = (
         db.query(Conversation)
@@ -174,11 +209,11 @@ def get_messages(
 
 @app.post("/conversations/{conv_id}/messages")
 def send_message(
-    conv_id: int,
-    content: str,
-    role: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+        conv_id: int,
+        content: str,
+        role: str,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user),
 ):
     conv = (
         db.query(Conversation)

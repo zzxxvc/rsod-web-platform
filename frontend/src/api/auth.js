@@ -1,44 +1,63 @@
-const baseURL = "http://127.0.0.1:8000" // 你的后端地址
+import { API_ORIGIN } from '../config/api'
 
-// 1. 注册用户
-export async function register(username, password) {
-  const res = await fetch(`${baseURL}/register?username=${username}&password=${password}`, {
-    method: "POST"
-  })
-  return res.json()
+const baseURL = API_ORIGIN
+
+function parseErrorDetail(data) {
+  if (!data?.detail) return "请求失败";
+  if (typeof data.detail === "string") return data.detail;
+  if (Array.isArray(data.detail)) {
+    return data.detail.map((e) => e.msg).join("; ");
+  }
+  return "请求失败";
 }
 
-// 2. 登录获取 Token
+export async function register(username, email, password) {
+  const params = new URLSearchParams({ username, email, password });
+  const res = await fetch(`${baseURL}/register?${params}`, { method: "POST" });
+  const data = await res.json();
+  if (!res.ok) {
+    return { error: parseErrorDetail(data), ...data };
+  }
+  return data;
+}
+
 export async function login(username, password) {
-  const formData = new FormData()
-  formData.append("username", username)
-  formData.append("password", password)
+  const formData = new FormData();
+  formData.append("username", username);
+  formData.append("password", password);
 
   const res = await fetch(`${baseURL}/token`, {
     method: "POST",
-    body: formData
-  })
-  return res.json()
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    return { error: parseErrorDetail(data), ...data };
+  }
+  return data;
 }
 
-// 3. 获取当前用户的对话列表
 export async function getConversations(token) {
   const res = await fetch(`${baseURL}/conversations`, {
     method: "GET",
-    headers: {
-      "Authorization": `Bearer ${token}`
-    }
-  })
-  return res.json()
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    return { error: parseErrorDetail(data), ...data };
+  }
+  return data;
 }
 
-// 4. 创建新对话
 export async function createConversation(token, title) {
-  const res = await fetch(`${baseURL}/conversations?title=${title}`, {
+  const params = new URLSearchParams({ title });
+  const res = await fetch(`${baseURL}/conversations?${params}`, {
     method: "POST",
-    headers: {
-      "Authorization": `Bearer ${token}`
-    }
-  })
-  return res.json()
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    return { error: parseErrorDetail(data), ...data };
+  }
+  return data;
 }

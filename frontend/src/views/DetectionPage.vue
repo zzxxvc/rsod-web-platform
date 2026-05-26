@@ -452,7 +452,12 @@ import {
 } from "@element-plus/icons-vue";
 import { ElMessage, ElLoading } from "element-plus";
 import { ChatDotRound, Upload } from "@element-plus/icons-vue";
-import { detectSingleImage } from "../api/detection";
+import {
+  detectSingleImage,
+  buildDetectionFormData,
+  DETECTION_SINGLE_URL,
+} from "../api/detection";
+import { staticUrl } from "../config/api";
 
 const selectedModel = ref("DermNet-v1");
 const detectionResult = ref(null);
@@ -506,9 +511,6 @@ watch(
   },
 );
 
-const backendBaseUrl =
-  import.meta.env.VITE_API_BASE_URL?.replace(/\/api$/, "") ||
-  "http://localhost:8000";
 
 const originalImage = ref(
   new URL("../assets/images/bus.jpg", import.meta.url).href,
@@ -753,18 +755,13 @@ const performLiveDetection = async () => {
     }
 
     // 2. 创建 FormData
-    const formData = new FormData();
-    formData.append("file", blob, "live_capture.jpg");
-    formData.append("model_name", selectedModel.value);
+    const formData = buildDetectionFormData(blob, selectedModel.value);
 
     // 3. 调用检测 API
-    const response = await fetch(
-      `${backendBaseUrl}/api/detection/single`,
-      {
-        method: "POST",
-        body: formData
-      }
-    );
+    const response = await fetch(DETECTION_SINGLE_URL, {
+      method: "POST",
+      body: formData,
+    });
 
     // 计算分析耗时
     const endTime = performance.now();
@@ -774,15 +771,16 @@ const performLiveDetection = async () => {
       throw new Error(`检测失败: ${response.status}`);
     }
 
-    const data = await response.json();
+    const payload = await response.json();
+    const boxes = payload.data?.boxes ?? payload.boxes ?? [];
 
     // 4. 更新检测结果
-    if (data.boxes && data.boxes.length > 0) {
-      liveResults.value = data.boxes;
-      drawDetectionResults(data.boxes);
-      
+    if (boxes.length > 0) {
+      liveResults.value = boxes;
+      drawDetectionResults(boxes);
+
       // 5. 处理高风险目标（置信度 >= 80%）
-      await processHighRiskTargets(data.boxes);
+      await processHighRiskTargets(boxes);
     } else {
       liveResults.value = [];
     }
@@ -890,11 +888,7 @@ const drawDetectionResults = (boxes) => {
   });
 };
 
-const getFullUrl = (relativeUrl) => {
-  if (!relativeUrl) return "";
-  if (/^https?:\/\//.test(relativeUrl)) return relativeUrl;
-  return `${backendBaseUrl}${relativeUrl}`;
-};
+const getFullUrl = staticUrl;
 
 const handleFileChange = async (event) => {
   event.stopPropagation();
@@ -933,11 +927,7 @@ const performBatchDetection = async (files) => {
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("model_name", selectedModel.value);
-
-      const response = await detectSingleImage(formData);
+      const response = await detectSingleImage(file, selectedModel.value);
       if (response.success && response.data) {
         detectionResults.value.push(response.data);
 
@@ -1005,12 +995,8 @@ const performSingleDetection = async (file) => {
   });
 
   try {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("model_name", selectedModel.value);
-
     originalImage.value = URL.createObjectURL(file);
-    const response = await detectSingleImage(formData);
+    const response = await detectSingleImage(file, selectedModel.value);
 
     if (response.success && response.data) {
       detectionResult.value = response.data;

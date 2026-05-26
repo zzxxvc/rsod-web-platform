@@ -1,4 +1,6 @@
+import logging
 import os
+
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from app.services.detection_service import detection_service
 from app.utils.file_utils import save_upload_file, ensure_directories
@@ -12,6 +14,7 @@ from app.models.schemas import (
 )
 
 router = APIRouter(prefix="/detection", tags=["detection"])
+logger = logging.getLogger(__name__)
 
 ensure_directories()
 
@@ -19,16 +22,33 @@ DETECTION_HISTORY = []
 DETECTION_RESULT_STORAGE = {}
 
 
+@router.get("/status")
+async def detection_status():
+    ok, message = detection_service.readiness()
+    return {"ready": ok, "message": message, "model_path": settings.YOLO_MODEL_PATH}
+
+
 @router.post("/single", response_model=SingleDetectionResponse)
 async def detect_single_image(
     file: UploadFile = File(...),
     model_name: str = Form("pest-v1")
 ):
+    ok, message = detection_service.readiness()
+    if not ok:
+        raise HTTPException(status_code=503, detail=message)
+
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="未收到文件，请使用字段名 file 上传图片")
+
     try:
-        filename = await save_upload_file(file, settings.UPLOAD_DIR)
-        image_path = os.path.join(settings.UPLOAD_DIR, filename)
-        
-        result = detection_service.detect_single_image(image_path, model_name)
+        saved = await save_upload_file(file, settings.UPLOAD_DIR)
+        logger.info(
+            "收到上传: field=%s upload_name=%s saved=%s",
+            "file",
+            file.filename,
+            saved.absolute_path,
+        )
+        result = detection_service.detect_single_image(saved.absolute_path, model_name)
 
         history_item = HistoryItem(
             id=result.detection_id,
@@ -46,7 +66,12 @@ async def detect_single_image(
             message="检测成功",
             data=result
         )
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        logger.exception("单图检测失败")
         raise HTTPException(status_code=500, detail=f"检测失败: {str(e)}")
 
 

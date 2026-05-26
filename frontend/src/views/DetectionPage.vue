@@ -106,7 +106,242 @@
       </aside>
 
       <main class="center-panel">
-        <div class="viewer">
+        <!-- 图片预览弹窗 -->
+        <el-dialog
+          v-model="previewVisible"
+          :title="previewTitle"
+          width="80%"
+          class="image-preview-dialog"
+          destroy-on-close
+        >
+          <div class="preview-container">
+            <div class="preview-image-wrapper">
+              <img :src="previewImage" alt="预览图片" class="preview-image" />
+            </div>
+            <div class="preview-info" v-if="previewInfo">
+              <h4>{{ previewInfo.filename }}</h4>
+              <p><strong>检测结果：</strong>{{ previewInfo.topLabel }}</p>
+              <p><strong>置信度：</strong>{{ previewInfo.topConfidence }}</p>
+            </div>
+          </div>
+        </el-dialog>
+
+        <!-- 批量模式结果展示 -->
+        <section class="batch-results" v-if="activeMode === 'batch' && batchResults.length">
+          <div class="batch-header">
+            <h3>批量检测结果</h3>
+            <span class="batch-count">共 {{ batchResults.length }} 张图片</span>
+          </div>
+          <div class="batch-grid">
+            <div
+              v-for="(item, index) in batchResults"
+              :key="index"
+              class="batch-item"
+              :class="{ active: selectedBatchIndex === index }"
+            >
+              <div class="batch-item-images">
+                <div class="batch-original" @click="openPreview(item, 'original')">
+                  <img :src="item.originalUrl" :alt="'原图' + (index + 1)" />
+                  <div class="batch-item-overlay">查看原图</div>
+                </div>
+                <div class="batch-result" @click="openPreview(item, 'result')">
+                  <img :src="item.resultUrl" :alt="'结果' + (index + 1)" />
+                  <div class="batch-item-overlay">查看结果</div>
+                </div>
+              </div>
+              <div class="batch-item-info" @click="selectBatchResult(index)">
+                <div class="batch-item-name">{{ item.filename }}</div>
+                <div class="batch-item-label">{{ item.topLabel }}</div>
+                <div class="batch-item-confidence">{{ item.topConfidence }}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 实时检测展示 -->
+        <section class="live-detection" v-if="activeMode === 'live'">
+          <div class="live-header">
+            <h3>实时检测</h3>
+            <div class="live-controls">
+              <el-button
+                v-if="!isLiveRunning"
+                type="success"
+                size="large"
+                @click="startLiveDetection"
+              >
+                开始检测
+              </el-button>
+              <el-button
+                v-else
+                type="danger"
+                size="large"
+                @click="stopLiveDetection"
+              >
+                停止检测
+              </el-button>
+              <el-button
+                v-if="isLiveRunning && liveHighRiskTargets.length > 0"
+                type="warning"
+                size="large"
+                @click="clearHighRiskTargets"
+              >
+                清空高风险记录
+              </el-button>
+            </div>
+          </div>
+
+          <!-- 摄像头与结果并排展示 -->
+          <div class="live-main-content">
+            <!-- 摄像头画面 -->
+            <div class="live-viewer">
+              <div class="viewer-header">
+                <span class="viewer-title">摄像头画面</span>
+                <span v-if="isLiveRunning" class="live-indicator">
+                  <span class="live-dot"></span>
+                  实时检测中
+                </span>
+              </div>
+              <div class="live-video-container">
+                <video
+                  ref="liveVideo"
+                  class="live-video"
+                  autoplay
+                  muted
+                  playsinline
+                ></video>
+                <canvas
+                  ref="liveCanvas"
+                  class="live-canvas"
+                ></canvas>
+                <div v-if="!isLiveRunning" class="live-overlay">
+                  <div class="live-overlay-text">点击"开始检测"以启动摄像头</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 当前检测结果 -->
+            <div class="live-result-panel">
+              <!-- Results画面 -->
+              <div class="viewer-header">
+                <span class="viewer-title">检测结果画面</span>
+              </div>
+              <div class="result-image-container">
+                <template v-if="liveCurrentCapture">
+                  <img :src="liveCurrentCapture" alt="检测结果" class="result-image" />
+                </template>
+                <template v-else>
+                  <div class="result-placeholder">
+                    <el-icon :size="48" class="placeholder-icon"><ImageIcon /></el-icon>
+                    <p>等待检测中...</p>
+                  </div>
+                </template>
+              </div>
+
+              <!-- 详细信息卡片 -->
+              <div class="live-detail-cards">
+                <!-- 当前结论 -->
+                <div class="detail-card-small">
+                  <div class="detail-card-title">当前结论</div>
+                  <div class="detail-card-value">
+                    {{ liveTopResult?.class_name || '未检测' }}
+                  </div>
+                </div>
+
+                <!-- 风险评估 -->
+                <div class="detail-card-small">
+                  <div class="detail-card-title">风险评估</div>
+                  <div class="detail-card-value">
+                    <span :class="riskLevelClass">{{ riskLevelText }}</span>
+                  </div>
+                </div>
+
+                <!-- 分析耗时 -->
+                <div class="detail-card-small">
+                  <div class="detail-card-title">分析耗时</div>
+                  <div class="detail-card-value">{{ liveAnalysisTime }}ms</div>
+                </div>
+              </div>
+
+              <!-- 检测结果列表 -->
+              <div class="live-results-section">
+                <div class="section-header">
+                  <span class="section-title">检测目标列表</span>
+                  <span class="result-count">共 {{ liveResults.length }} 个</span>
+                </div>
+                <div class="live-results-content">
+                  <div v-if="liveResults.length > 0" class="live-results-list">
+                    <div
+                      v-for="(result, index) in liveResults"
+                      :key="index"
+                      class="live-result-item"
+                      :class="{ 'high-risk': result.confidence >= 0.8 }"
+                    >
+                      <span class="result-label">{{ result.class_name }}</span>
+                      <span class="result-confidence">
+                        {{ (result.confidence * 100).toFixed(1) }}%
+                      </span>
+                      <span v-if="result.confidence >= 0.8" class="risk-badge">高风险</span>
+                    </div>
+                  </div>
+                  <div v-else class="empty-results">
+                    <el-icon :size="32" class="empty-icon"><Search /></el-icon>
+                    <p>暂无检测结果</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 检测统计数据 -->
+          <div class="live-stats">
+            <div class="stat-item">
+              <span class="stat-label">帧率</span>
+              <span class="stat-value">{{ liveFps }} FPS</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">已检测</span>
+              <span class="stat-value">{{ liveFrameCount }} 帧</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">当前目标</span>
+              <span class="stat-value">{{ liveResults.length }} 个</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">高风险记录</span>
+              <span class="stat-value highlight">{{ liveHighRiskTargets.length }} 条</span>
+            </div>
+          </div>
+
+          <!-- 高风险目标记录 -->
+          <div class="high-risk-panel" v-if="liveHighRiskTargets.length > 0">
+            <div class="panel-header">
+              <h4>
+                <el-icon class="warning-icon"><AlertTriangle /></el-icon>
+                高风险目标记录
+              </h4>
+              <span class="panel-desc">置信度 ≥ 80% 的检测目标（每种分类只保留最高置信度）</span>
+            </div>
+            <div class="high-risk-grid">
+              <div
+                v-for="(target, index) in liveHighRiskTargets"
+                :key="target.class_name"
+                class="high-risk-card"
+              >
+                <div class="card-image">
+                  <img :src="target.imageUrl" :alt="target.class_name" />
+                </div>
+                <div class="card-info">
+                  <div class="card-label">{{ target.class_name }}</div>
+                  <div class="card-confidence">置信度: {{ (target.confidence * 100).toFixed(1) }}%</div>
+                  <div class="card-time">{{ target.timestamp }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 单图模式展示 -->
+        <div class="viewer" v-else>
           <div class="viewer-pane original">
             <div class="viewer-title">原图</div>
             <div class="viewer-content image-box">
@@ -222,9 +457,35 @@ import { detectSingleImage } from "../api/detection";
 const selectedModel = ref("DermNet-v1");
 const detectionResult = ref(null);
 const detectionResults = ref([]); // for batch
+const batchResults = ref([]); // 存储所有批量检测结果
+const selectedBatchIndex = ref(0); // 当前选中的批量结果索引
 const originalFilename = ref("未上传图像");
 const fileInput = ref(null);
 const activeMode = ref("single");
+
+// 图片预览相关
+const previewVisible = ref(false);
+const previewImage = ref("");
+const previewTitle = ref("");
+const previewInfo = ref(null);
+
+// 实时检测相关
+const liveStream = ref(null); // 摄像头流
+const liveVideo = ref(null); // 视频元素引用
+const liveCanvas = ref(null); // Canvas 元素引用
+const liveContext = ref(null); // Canvas 绘图上下文
+const isLiveRunning = ref(false); // 是否正在检测
+const liveResults = ref([]); // 当前帧检测结果
+const liveFrameCount = ref(0); // 检测帧数
+const liveFps = ref(0); // 当前帧率
+const liveLastFrameTime = ref(0); // 上一帧时间戳
+const liveDetectionInterval = ref(null); // 检测定时器
+const liveFrameInterval = ref(16); // 帧间隔 (ms)，约60fps
+const liveDetecting = ref(false); // 是否正在发送检测请求
+const liveHighRiskTargets = ref([]); // 高风险目标（置信度>=80%）
+const liveCurrentCapture = ref(null); // 当前帧的捕获图像
+const liveAnalysisTime = ref(0); // 分析耗时（毫秒）
+const liveLastAnalysisTime = ref(0); // 上次分析时间
 
 const detectionStatus = ref("未检测");
 
@@ -268,18 +529,18 @@ const setMode = (key) => {
 };
 
 const topPrediction = computed(() => {
-  if (activeMode.value === "batch") {
-    const first = detectionResults.value?.[0];
-    return first?.boxes?.[0] || null;
+  // 在批量模式下使用当前选中的图片
+  if (activeMode.value === "batch" && detectionResult.value) {
+    return detectionResult.value?.boxes?.[0] || null;
   }
   if (!detectionResult.value?.boxes?.length) return null;
   return detectionResult.value.boxes[0];
 });
 
 const topPredictions = computed(() => {
-  if (activeMode.value === "batch") {
-    const first = detectionResults.value?.[0];
-    return first?.boxes?.slice(0, 3) || [];
+  // 在批量模式下使用当前选中的图片
+  if (activeMode.value === "batch" && detectionResult.value) {
+    return detectionResult.value?.boxes?.slice(0, 3) || [];
   }
   return detectionResult.value?.boxes?.slice(0, 3) || [];
 });
@@ -315,6 +576,32 @@ const suggestionText = computed(() => {
   return "建议继续观察，必要时定期随访。";
 });
 
+// 实时检测 - 最高置信度结果
+const liveTopResult = computed(() => {
+  if (!liveResults.value.length) return null;
+  return liveResults.value.reduce((prev, current) => {
+    return current.confidence > prev.confidence ? current : prev;
+  });
+});
+
+// 实时检测 - 风险等级文本
+const riskLevelText = computed(() => {
+  const topConfidence = liveTopResult.value?.confidence || 0;
+  if (topConfidence >= 0.8) return "高风险";
+  if (topConfidence >= 0.5) return "中风险";
+  if (topConfidence > 0) return "低风险";
+  return "未检测";
+});
+
+// 实时检测 - 风险等级样式类
+const riskLevelClass = computed(() => {
+  const level = riskLevelText.value;
+  if (level === "高风险") return "risk-high";
+  if (level === "中风险") return "risk-medium";
+  if (level === "低风险") return "risk-low";
+  return "risk-unknown";
+});
+
 const triggerUpload = () => {
   fileInput.value?.click();
 };
@@ -333,6 +620,274 @@ const modeLabel = computed(() => {
 
 const startLive = () => {
   ElMessage.info("实时检测已启动（示例 UI，仅前端占位）");
+};
+
+// 启动实时检测
+const startLiveDetection = async () => {
+  try {
+    // 1. 请求摄像头权限
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 640 },
+        height: { ideal: 480 },
+        facingMode: "environment" // 后置摄像头优先
+      }
+    });
+
+    liveStream.value = stream;
+
+    // 2. 将摄像头流绑定到 video 元素
+    if (liveVideo.value) {
+      liveVideo.value.srcObject = stream;
+      await liveVideo.value.play();
+    }
+
+    // 3. 初始化 Canvas
+    if (liveCanvas.value && liveVideo.value) {
+      liveCanvas.value.width = liveVideo.value.videoWidth || 640;
+      liveCanvas.value.height = liveVideo.value.videoHeight || 480;
+      liveContext.value = liveCanvas.value.getContext("2d");
+    }
+
+    // 4. 开始检测循环
+    isLiveRunning.value = true;
+    liveFrameCount.value = 0;
+    liveLastFrameTime.value = performance.now();
+    liveResults.value = [];
+
+    // 5. 启动帧捕获循环
+    requestAnimationFrame(captureFrame);
+
+    ElMessage.success("实时检测已启动");
+  } catch (error) {
+    console.error("启动摄像头失败:", error);
+    ElMessage.error(
+      error.name === "NotAllowedError"
+        ? "请允许访问摄像头权限"
+        : "无法访问摄像头：" + error.message
+    );
+  }
+};
+
+// 停止实时检测
+const stopLiveDetection = () => {
+  isLiveRunning.value = false;
+
+  // 停止摄像头流
+  if (liveStream.value) {
+    liveStream.value.getTracks().forEach((track) => track.stop());
+    liveStream.value = null;
+  }
+
+  // 清除检测定时器
+  if (liveDetectionInterval.value) {
+    clearInterval(liveDetectionInterval.value);
+    liveDetectionInterval.value = null;
+  }
+
+  // 清除 Canvas
+  if (liveContext.value && liveCanvas.value) {
+    liveContext.value.clearRect(
+      0,
+      0,
+      liveCanvas.value.width,
+      liveCanvas.value.height
+    );
+  }
+
+  ElMessage.info("实时检测已停止");
+};
+
+// 捕获并处理每一帧
+const captureFrame = async () => {
+  if (!isLiveRunning.value) return;
+
+  try {
+    // 1. 计算帧率
+    const now = performance.now();
+    const elapsed = now - liveLastFrameTime.value;
+    liveFps.value = Math.round(1000 / elapsed);
+    liveLastFrameTime.value = now;
+
+    // 2. 绘制视频帧到 Canvas
+    if (liveContext.value && liveVideo.value) {
+      liveContext.value.drawImage(
+        liveVideo.value,
+        0,
+        0,
+        liveCanvas.value.width,
+        liveCanvas.value.height
+      );
+    }
+
+    // 3. 每隔一定帧数进行一次检测 (节流)
+    if (liveFrameCount.value % 10 === 0 && !liveDetecting.value) {
+      await performLiveDetection();
+    }
+
+    liveFrameCount.value++;
+
+    // 4. 继续下一帧
+    requestAnimationFrame(captureFrame);
+  } catch (error) {
+    console.error("帧捕获错误:", error);
+  }
+};
+
+// 执行实时检测
+const performLiveDetection = async () => {
+  if (liveDetecting.value || !liveCanvas.value) return;
+
+  liveDetecting.value = true;
+  const startTime = performance.now(); // 记录开始时间
+
+  try {
+    // 1. 将 Canvas 转换为 Blob
+    const blob = await new Promise((resolve) => {
+      liveCanvas.value.toBlob(resolve, "image/jpeg", 0.8);
+    });
+
+    if (!blob) {
+      liveDetecting.value = false;
+      return;
+    }
+
+    // 2. 创建 FormData
+    const formData = new FormData();
+    formData.append("file", blob, "live_capture.jpg");
+    formData.append("model_name", selectedModel.value);
+
+    // 3. 调用检测 API
+    const response = await fetch(
+      `${backendBaseUrl}/api/detection/single`,
+      {
+        method: "POST",
+        body: formData
+      }
+    );
+
+    // 计算分析耗时
+    const endTime = performance.now();
+    liveAnalysisTime.value = Math.round(endTime - startTime);
+
+    if (!response.ok) {
+      throw new Error(`检测失败: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // 4. 更新检测结果
+    if (data.boxes && data.boxes.length > 0) {
+      liveResults.value = data.boxes;
+      drawDetectionResults(data.boxes);
+      
+      // 5. 处理高风险目标（置信度 >= 80%）
+      await processHighRiskTargets(data.boxes);
+    } else {
+      liveResults.value = [];
+    }
+  } catch (error) {
+    console.error("实时检测错误:", error);
+    // 检测失败时清空结果
+    liveResults.value = [];
+  } finally {
+    liveDetecting.value = false;
+  }
+};
+
+// 处理高风险目标
+const processHighRiskTargets = async (boxes) => {
+  if (!liveCanvas.value) return;
+
+  // 获取当前帧的图像
+  const imageUrl = liveCanvas.value.toDataURL("image/jpeg", 0.8);
+  liveCurrentCapture.value = imageUrl;
+
+  // 筛选置信度 >= 80% 的目标
+  const highRiskBoxes = boxes.filter(box => box.confidence >= 0.8);
+
+  // 对每个高风险目标进行处理
+  for (const box of highRiskBoxes) {
+    const existingIndex = liveHighRiskTargets.value.findIndex(
+      target => target.class_name === box.class_name
+    );
+
+    if (existingIndex >= 0) {
+      // 如果已存在该类别的记录，只保留置信度更高的
+      if (box.confidence > liveHighRiskTargets.value[existingIndex].confidence) {
+        liveHighRiskTargets.value[existingIndex] = {
+          class_name: box.class_name,
+          confidence: box.confidence,
+          imageUrl: imageUrl,
+          timestamp: new Date().toLocaleString('zh-CN')
+        };
+      }
+    } else {
+      // 如果不存在该类别的记录，添加新记录
+      liveHighRiskTargets.value.push({
+        class_name: box.class_name,
+        confidence: box.confidence,
+        imageUrl: imageUrl,
+        timestamp: new Date().toLocaleString('zh-CN')
+      });
+    }
+  }
+};
+
+// 清空高风险目标记录
+const clearHighRiskTargets = () => {
+  liveHighRiskTargets.value = [];
+  ElMessage.info("高风险记录已清空");
+};
+
+// 绘制检测结果到 Canvas
+const drawDetectionResults = (boxes) => {
+  if (!liveContext.value || !liveCanvas.value) return;
+
+  const canvas = liveCanvas.value;
+  const ctx = liveContext.value;
+
+  // 重新绘制视频帧（清除之前的绘制）
+  ctx.drawImage(
+    liveVideo.value,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  // 绘制每个检测框
+  boxes.forEach((box, index) => {
+    const [x1, y1, x2, y2] = box.xyxy;
+    const confidence = box.confidence;
+    const className = box.class_name;
+
+    // 颜色映射（为不同类别分配不同颜色）
+    const colors = [
+      "#FF6B6B",
+      "#4ECDC4",
+      "#45B7D1",
+      "#FFA07A",
+      "#98D8C8"
+    ];
+    const color = colors[index % colors.length];
+
+    // 绘制边界框
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+
+    // 绘制标签背景
+    ctx.fillStyle = color;
+    const label = `${className} ${(confidence * 100).toFixed(1)}%`;
+    ctx.font = "bold 16px Arial";
+    const textWidth = ctx.measureText(label).width;
+    ctx.fillRect(x1, y1 - 25, textWidth + 10, 25);
+
+    // 绘制标签文字
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillText(label, x1 + 5, y1 - 7);
+  });
 };
 
 const getFullUrl = (relativeUrl) => {
@@ -365,28 +920,81 @@ const handleFileChange = async (event) => {
 };
 
 const performBatchDetection = async (files) => {
+  const loading = ElLoading.service({
+    lock: true,
+    text: `正在检测 ${files.length} 张图片...`,
+    background: "rgba(0, 0, 0, 0.75)",
+  });
+
   detectionResults.value = [];
-  for (const file of files) {
+  batchResults.value = [];
+  selectedBatchIndex.value = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
     try {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("model_name", selectedModel.value);
+
       const response = await detectSingleImage(formData);
       if (response.success && response.data) {
         detectionResults.value.push(response.data);
+
+        // 提取第一张检测结果的标签和置信度
+        const topBox = response.data.boxes?.[0];
+        batchResults.value.push({
+          originalUrl: URL.createObjectURL(file),
+          resultUrl: getFullUrl(response.data.result_image_url),
+          filename: file.name,
+          topLabel: topBox?.class_name || "未知",
+          topConfidence: topBox ? `${(topBox.confidence * 100).toFixed(1)}%` : "0%",
+          data: response.data
+        });
       }
     } catch (err) {
-      console.error("批量检测单张出错", err);
+      console.error(`批量检测第 ${i + 1} 张出错`, err);
     }
   }
+
+  loading.close();
+
   // 显示第一张结果为预览
-  if (detectionResults.value[0]) {
-    detectionResult.value = detectionResults.value[0];
-    originalImage.value = URL.createObjectURL(files[0]);
-    resultImage.value = getFullUrl(detectionResults.value[0].result_image_url);
+  if (batchResults.value[0]) {
+    selectBatchResult(0);
     detectionStatus.value = "批量检测完成";
-    ElMessage.success("批量检测完成");
+    ElMessage.success(`批量检测完成，共 ${batchResults.value.length} 张图片`);
   }
+};
+
+// 选择批量结果中的某一项
+const selectBatchResult = (index) => {
+  selectedBatchIndex.value = index;
+  const item = batchResults.value[index];
+  if (item) {
+    detectionResult.value = item.data;
+    originalImage.value = item.originalUrl;
+    resultImage.value = item.resultUrl;
+    originalFilename.value = item.filename;
+    detectionStatus.value = item.topLabel;
+  }
+};
+
+// 打开图片预览弹窗
+const openPreview = (item, type) => {
+  if (type === 'original') {
+    previewImage.value = item.originalUrl;
+    previewTitle.value = `原图预览 - ${item.filename}`;
+  } else {
+    previewImage.value = item.resultUrl;
+    previewTitle.value = `检测结果预览 - ${item.filename}`;
+  }
+  previewInfo.value = {
+    filename: item.filename,
+    topLabel: item.topLabel,
+    topConfidence: item.topConfidence
+  };
+  previewVisible.value = true;
 };
 
 const performSingleDetection = async (file) => {
@@ -644,6 +1252,234 @@ const currentPredictions = computed(() => topPredictions.value || []);
   gap: 24px;
 }
 
+/* 批量检测结果样式 */
+.batch-results {
+  background: var(--card-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--card-shadow);
+}
+
+.batch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.batch-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.batch-count {
+  font-size: 14px;
+  color: var(--text-secondary);
+  background: var(--primary-light);
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.batch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.batch-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.batch-grid::-webkit-scrollbar-track {
+  background: var(--panel-bg);
+  border-radius: 3px;
+}
+
+.batch-grid::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 3px;
+}
+
+.batch-item {
+  background: var(--panel-bg);
+  border: 2px solid transparent;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.batch-item:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.batch-item.active {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.2);
+}
+
+.batch-item-images {
+  display: flex;
+  gap: 2px;
+  height: 160px;
+}
+
+.batch-original,
+.batch-result {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.batch-original::after,
+.batch-result::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.batch-original img,
+.batch-result img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.batch-item-info {
+  padding: 12px;
+  background: var(--card-bg);
+}
+
+.batch-item-name {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-item-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.batch-item-confidence {
+  font-size: 13px;
+  color: var(--secondary-color);
+  font-weight: 600;
+}
+
+/* 图片预览弹窗样式 */
+.preview-container {
+  display: flex;
+  gap: 24px;
+  max-height: 70vh;
+}
+
+.preview-image-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+.preview-info {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.preview-info h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--panel-border);
+  word-break: break-all;
+}
+
+.preview-info p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.preview-info strong {
+  color: var(--text-primary);
+}
+
+/* 批量图片悬停效果 */
+.batch-original,
+.batch-result {
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.batch-item-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(124, 92, 255, 0.8);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.batch-original:hover .batch-item-overlay,
+.batch-result:hover .batch-item-overlay {
+  opacity: 1;
+}
+
+.batch-item-info {
+  cursor: pointer;
+}
+
+.batch-item-info:hover {
+  background: rgba(124, 92, 255, 0.1);
+}
+
 .result-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -846,5 +1682,508 @@ const currentPredictions = computed(() => topPredictions.value || []);
   .image-preview {
     min-height: 260px;
   }
+
+  .preview-container {
+    flex-direction: column;
+  }
+
+  .preview-info {
+    width: 100%;
+  }
+}
+
+/* 图片预览对话框样式 */
+:deep(.image-preview-dialog) {
+  max-width: 1400px;
+}
+
+/* 实时检测样式 */
+.live-detection {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.live-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+}
+
+.live-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.live-controls {
+  display: flex;
+  gap: 12px;
+}
+
+/* 摄像头与结果并排展示 */
+.live-main-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.viewer-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #52c41a;
+  font-weight: 500;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: #52c41a;
+  border-radius: 50%;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.result-count {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.live-viewer {
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+
+.live-result-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+
+/* Results画面容器 */
+.result-image-container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.result-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  gap: 12px;
+}
+
+.placeholder-icon {
+  opacity: 0.5;
+}
+
+/* 详细信息卡片容器 */
+.live-detail-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 小卡片 - 边框比普通小5px (11px vs 16px) */
+.detail-card-small {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 11px;
+  padding: 12px;
+  text-align: center;
+}
+
+.detail-card-title {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.detail-card-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* 检测结果区域 */
+.live-results-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.live-results-content {
+  flex: 1;
+  padding: 12px 16px;
+  overflow-y: auto;
+}
+
+.empty-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-icon {
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.live-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.stat-value.highlight {
+  color: #ff6b6b;
+}
+
+/* 风险等级颜色 */
+.risk-high {
+  color: #ff6b6b;
+}
+
+.risk-medium {
+  color: #ffc107;
+}
+
+.risk-low {
+  color: #52c41a;
+}
+
+.risk-unknown {
+  color: var(--text-secondary);
+}
+
+.live-video-container {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  overflow: hidden;
+}
+
+.live-video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: translate(-50%, -50%);
+}
+
+.live-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.live-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.live-overlay-text {
+  padding: 20px 30px;
+  background: rgba(124, 92, 255, 0.8);
+  border-radius: 12px;
+}
+
+.live-results {
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--card-shadow);
+}
+
+.live-results h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.live-results-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.live-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+}
+
+.result-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.result-confidence {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--secondary-color);
+}
+
+/* 高风险结果样式 */
+.live-result-item.high-risk {
+  background: rgba(255, 107, 107, 0.1);
+  border-color: rgba(255, 107, 107, 0.3);
+}
+
+.risk-badge {
+  padding: 4px 10px;
+  background: #ff6b6b;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+/* 高风险目标面板 */
+.high-risk-panel {
+  background: var(--card-bg);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--card-shadow);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.panel-header h4 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.warning-icon {
+  color: #ff6b6b;
+}
+
+.panel-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.high-risk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.high-risk-card {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  background: rgba(255, 107, 107, 0.05);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: 12px;
+}
+
+.card-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.card-confidence {
+  font-size: 13px;
+  color: #ff6b6b;
+  font-weight: 600;
+}
+
+.card-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 1080px) {
+  .live-main-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .live-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .live-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .high-risk-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
+
+:deep(.image-preview-dialog .el-dialog__header) {
+  border-bottom: 1px solid var(--panel-border);
+  padding: 16px 20px;
+}
+
+:deep(.image-preview-dialog .el-dialog__title) {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+:deep(.image-preview-dialog .el-dialog__body) {
+  padding: 20px;
+}
+
+@media (max-width: 1080px) {
+  :deep(.preview-container) {
+    flex-direction: column;
+  }
+
+  :deep(.preview-info) {
+    width: 100%;
+  }
+}

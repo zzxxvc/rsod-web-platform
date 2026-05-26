@@ -33,7 +33,7 @@
 
       <div class="stats-cards">
         <div class="stat-card">
-          <div class="stat-value">128</div>
+          <div class="stat-value">12</div>
           <div class="stat-label">总诊断次数</div>
         </div>
         <div class="stat-card">

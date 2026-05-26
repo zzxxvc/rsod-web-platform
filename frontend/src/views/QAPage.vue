@@ -1,8 +1,10 @@
 <template>
   <div class="qa-page">
     <div class="page-header">
-      <h1 class="page-title">AI 智能问答</h1>
-      <p class="page-subtitle">关于遥感目标检测的任何问题，都可以问我</p>
+      <h1 class="page-title">皮肤病变问答</h1>
+      <p class="page-subtitle">
+        询问病变类型、诊断指标与复诊建议，AI 助手随时响应。
+      </p>
     </div>
 
     <div class="chat-container">
@@ -12,7 +14,7 @@
             <el-icon><ChatDotRound /></el-icon>
           </div>
           <div class="message-content">
-            你好！我是遥感目标检测AI助手。我可以帮你解答关于飞机、油罐、操场、立交桥、农业病虫害等遥感目标检测的相关问题，也可以为你提供检测结果的详细分析。
+            你好！我是皮肤病变诊断助手。请描述你的病变图像、症状或诊断疑问，我会帮你分析常见类型与参考建议。
           </div>
         </div>
       </div>
@@ -20,7 +22,7 @@
       <div class="chat-input">
         <el-input
           v-model="question"
-          placeholder="请输入你的问题..."
+          placeholder="请输入您的皮肤诊断问题..."
           :rows="3"
         />
         <el-button type="primary" class="send-btn" :loading="sending">
@@ -41,7 +43,6 @@ const sending = ref(false);
 <style scoped lang="scss">
 .qa-page {
   width: 100%;
-  height: 100%;
   display: flex;
   flex-direction: column;
 
@@ -50,7 +51,7 @@ const sending = ref(false);
 
     .page-title {
       font-size: 24px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-primary);
       margin-bottom: 8px;
     }
@@ -58,20 +59,22 @@ const sending = ref(false);
     .page-subtitle {
       font-size: 14px;
       color: var(--text-secondary);
+      max-width: 720px;
     }
   }
 
   .chat-container {
     flex: 1;
-    background-color: #ffffff;
-    border-radius: 10px;
+    background: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 22px;
     box-shadow: var(--card-shadow);
     display: flex;
     flex-direction: column;
 
     .chat-messages {
       flex: 1;
-      padding: 20px;
+      padding: 24px;
       overflow-y: auto;
 
       .message {
@@ -79,25 +82,26 @@ const sending = ref(false);
         margin-bottom: 20px;
 
         .message-avatar {
-          width: 36px;
-          height: 36px;
+          width: 40px;
+          height: 40px;
           border-radius: 50%;
           background-color: var(--primary-color);
           color: white;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-right: 12px;
+          margin-right: 14px;
           flex-shrink: 0;
         }
 
         .message-content {
-          background-color: #f3f4f6;
-          padding: 12px 16px;
-          border-radius: 0 12px 12px 12px;
+          background: rgba(255, 255, 255, 0.06);
+          padding: 14px 18px;
+          border-radius: 0 18px 18px 18px;
           max-width: 70%;
-          line-height: 1.6;
+          line-height: 1.75;
           font-size: 14px;
+          color: var(--text-secondary);
         }
 
         &.user-message {
@@ -105,13 +109,14 @@ const sending = ref(false);
 
           .message-avatar {
             margin-right: 0;
-            margin-left: 12px;
+            margin-left: 14px;
             background-color: #60a5fa;
           }
 
           .message-content {
-            background-color: var(--primary-light);
-            border-radius: 12px 0 12px 12px;
+            background: rgba(124, 92, 255, 0.18);
+            border-radius: 18px 0 18px 18px;
+            color: var(--text-primary);
           }
         }
       }
@@ -119,13 +124,12 @@ const sending = ref(false);
 
     .chat-input {
       padding: 20px;
-      border-top: 1px solid var(--border-color);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
       display: flex;
       gap: 12px;
 
       .send-btn {
-        width: 100px;
-        height: auto;
+        width: 120px;
       }
     }
   }

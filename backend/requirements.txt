@@ -45,3 +45,5 @@ python-dotenv>=1.0.0
 numpy>=1.23.0,<2.0.0
 python-jose
 passlib[bcrypt]
+# OpenAI API客户端库
+openai>=1.0.0

@@ -1,5 +1,6 @@
 import os
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
+from sqlalchemy.orm import Session
 from app.services.detection_service import detection_service
 from app.utils.file_utils import save_upload_file, ensure_directories
 from app.config import settings
@@ -10,65 +11,111 @@ from app.models.schemas import (
     TargetItem,
     HistoryItem,
 )
+from app.auth import get_current_user
+from database import get_db
+from models import DetectionRecord, User
 
 router = APIRouter(prefix="/detection", tags=["detection"])
 
 ensure_directories()
 
-DETECTION_HISTORY = []
 DETECTION_RESULT_STORAGE = {}
 
 
 @router.post("/single", response_model=SingleDetectionResponse)
 async def detect_single_image(
     file: UploadFile = File(...),
-    model_name: str = Form("pest-v1")
+    model_name: str = Form("pest-v1"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     try:
         filename = await save_upload_file(file, settings.UPLOAD_DIR)
         image_path = os.path.join(settings.UPLOAD_DIR, filename)
-        
+
         result = detection_service.detect_single_image(image_path, model_name)
 
-        history_item = HistoryItem(
-            id=result.detection_id,
+        record = DetectionRecord(
+            detection_id=result.detection_id,
+            user_id=current_user.id,
             image_url=result.image_url,
             result_image_url=result.result_image_url,
             total_objects=len(result.boxes),
-            created_at=result.created_at,
             model_name=result.model_name,
+            created_at=result.created_at,
         )
-        DETECTION_HISTORY.append(history_item)
+        db.add(record)
+        db.commit()
+        db.refresh(record)
+
         DETECTION_RESULT_STORAGE[result.detection_id] = result
-        
+
         return SingleDetectionResponse(
             success=True,
             message="检测成功",
-            data=result
+            data=result,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"检测失败: {str(e)}")
 
 
 @router.get("/history", response_model=HistoryResponse)
-async def get_detection_history():
+async def get_detection_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    records = (
+        db.query(DetectionRecord)
+        .filter(DetectionRecord.user_id == current_user.id)
+        .order_by(DetectionRecord.created_at.desc())
+        .all()
+    )
+
+    data = [
+        HistoryItem(
+            id=record.detection_id,
+            image_url=record.image_url,
+            result_image_url=record.result_image_url,
+            total_objects=record.total_objects,
+            created_at=record.created_at,
+            model_name=record.model_name,
+        )
+        for record in records
+    ]
+
     return HistoryResponse(
         success=True,
         message="获取成功",
-        data=DETECTION_HISTORY,
-        total=len(DETECTION_HISTORY)
+        data=data,
+        total=len(data),
     )
 
 
 @router.get("/detail/{detection_id}", response_model=SingleDetectionResponse)
-async def get_detection_detail(detection_id: str):
+async def get_detection_detail(
+    detection_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    record = (
+        db.query(DetectionRecord)
+        .filter(
+            DetectionRecord.detection_id == detection_id,
+            DetectionRecord.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not record:
+        raise HTTPException(status_code=404, detail="检测记录未找到")
+
     result = DETECTION_RESULT_STORAGE.get(detection_id)
     if not result:
-        raise HTTPException(status_code=404, detail="检测记录未找到")
+        raise HTTPException(status_code=404, detail="检测结果未找到")
+
     return SingleDetectionResponse(
         success=True,
         message="获取成功",
-        data=result
+        data=result,
     )
 
 

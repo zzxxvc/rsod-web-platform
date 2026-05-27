@@ -1,4 +1,7 @@
-# main.py
+from dotenv import load_dotenv
+#在backend/.env文件中配置BAILIAN_API_KEY=你的阿里云百炼API密钥
+load_dotenv()
+
 from datetime import datetime, timedelta
 from typing import Optional
 from uuid import UUID
@@ -12,6 +15,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.api.detection import router as detection_router
+from app.api.qa import router as qa_router
 from app.api.profile import router as profile_router
 from app.auth_config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
 from app.config import settings
@@ -57,7 +61,12 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 # 与前端 baseURL（/api）对齐：/api/detection/...
 app.include_router(detection_router, prefix="/api")
-app.include_router(profile_router, prefix="/api")
+app.include_router(qa_router, prefix="/api")
+
+# --- 认证配置 ---
+SECRET_KEY = "your-secret-key-here-keep-it-safe"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

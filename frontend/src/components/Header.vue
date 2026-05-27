@@ -16,16 +16,12 @@
     </div>
 
     <div class="header-actions">
-      <el-tag type="success" effect="light" class="status-tag">
-        <el-icon class="el-icon--left"><Check /></el-icon>
-        检测完成
-      </el-tag>
-
       <div class="action-icons">
-        <el-icon class="action-icon"><Grid /></el-icon>
         <el-icon class="action-icon"><Bell /></el-icon>
-        <el-icon class="action-icon"><QuestionFilled /></el-icon>
-        <div class="user-dropdown" @click="goProfile">
+      </div>
+
+      <el-dropdown trigger="click" @command="handleCommand">
+        <div class="user-dropdown">
           <el-avatar class="user-avatar" size="32">
             <img
               src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png"
@@ -33,24 +29,40 @@
             />
           </el-avatar>
           <div class="user-info">
-            <div class="user-name">Lily</div>
+            <div class="user-name">{{ userName }}</div>
             <div class="user-role">普通用户</div>
           </div>
           <el-icon class="dropdown-icon"><CaretBottom /></el-icon>
         </div>
-      </div>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="profile">
+              <el-icon><User /></el-icon>
+              个人中心
+            </el-dropdown-item>
+            <el-dropdown-item command="settings">
+              <el-icon><Setting /></el-icon>
+              账号设置
+            </el-dropdown-item>
+            <el-dropdown-item divided command="logout">
+              <el-icon><SwitchButton /></el-icon>
+              退出登录
+            </el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref, computed } from "vue";
 import {
-  Check,
-  Grid,
   Bell,
-  QuestionFilled,
   CaretBottom,
-  House,
+  User,
+  Setting,
+  SwitchButton,
 } from "@element-plus/icons-vue";
 import { useRouter, useRoute } from "vue-router";
 
@@ -58,12 +70,23 @@ const router = useRouter();
 const route = useRoute();
 const activePath = route.path;
 
+// 从 localStorage 读取用户名（登录时保存）
+const userName = ref(localStorage.getItem("username") || "用户");
+
 const onSelect = (index) => {
   if (index) router.push(index);
 };
 
-const goProfile = () => {
-  router.push("/profile");
+const handleCommand = (command) => {
+  if (command === "profile") {
+    router.push("/profile");
+  } else if (command === "settings") {
+    router.push("/profile");
+  } else if (command === "logout") {
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    router.push("/login");
+  }
 };
 </script>
 
@@ -86,37 +109,10 @@ const goProfile = () => {
   padding: 8px 12px;
 }
 
-.breadcrumbs {
-  display: flex;
-  align-items: center;
-}
-
-.breadcrumb-icon {
-  font-size: 14px;
-  color: var(--text-secondary);
-}
-
-.breadcrumb-separator {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin: 0 8px;
-}
-
-.breadcrumb-text {
-  font-size: 14px;
-  color: var(--text-primary);
-}
-
 .header-actions {
   display: flex;
   align-items: center;
-}
-
-.status-tag {
-  margin-right: 24px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 13px;
+  gap: 8px;
 }
 
 .action-icons {
@@ -127,7 +123,7 @@ const goProfile = () => {
 .action-icon {
   font-size: 18px;
   color: var(--text-secondary);
-  margin-right: 20px;
+  margin-right: 16px;
   cursor: pointer;
   transition: color 0.2s;
 }
@@ -136,13 +132,15 @@ const goProfile = () => {
   color: var(--primary-color);
 }
 
+/* ====== 用户下拉 ====== */
 .user-dropdown {
   display: flex;
   align-items: center;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
   transition: background-color 0.2s;
+  outline: none;
 }
 
 .user-dropdown:hover {
@@ -151,10 +149,12 @@ const goProfile = () => {
 
 .user-avatar {
   margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .user-info {
   margin-right: 6px;
+  line-height: 1.3;
 }
 
 .user-name {
@@ -171,5 +171,19 @@ const goProfile = () => {
 .dropdown-icon {
   font-size: 12px;
   color: var(--text-secondary);
+  transition: transform 0.2s;
+}
+
+/* 下拉菜单项样式 */
+:deep(.el-dropdown-menu__item) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 10px 16px;
+}
+
+:deep(.el-dropdown-menu__item .el-icon) {
+  font-size: 16px;
 }
 </style>

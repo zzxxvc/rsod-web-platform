@@ -14,7 +14,7 @@ pydantic>=2.5.0
 pydantic-settings>=2.1.0
 # JWT 与密码哈希（登录注册）
 python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
+passlib[cryptography]>=1.7.4
 # =============================================================================
 # 数据库
 # =============================================================================
@@ -51,9 +51,9 @@ numpy>=1.23.0,<2.0.0
 # JWT 认证依赖
 python-jose[cryptography]
 passlib
-bcrypt
+cryptography
 python-jose
-passlib[bcrypt]
+passlib[cryptography]
 # OpenAI API客户端库
 openai>=1.0.0
 #阿里云百炼的官方 Python SDK

@@ -128,6 +128,27 @@
       </el-button>
     </div>
 
+    <!-- 查看详情弹窗 -->
+    <el-dialog v-model="detailVisible" title="检测结果" width="720px" destroy-on-close>
+      <div v-if="detailLoading" class="detail-loading">加载中...</div>
+      <template v-else-if="detailData">
+        <img :src="detailImageUrl" alt="检测结果" class="detail-image" />
+        <p class="detail-meta">
+          模型：{{ detailData.model_name }} · 目标数：{{ detailData.total_objects }} ·
+          耗时：{{ detailData.detection_time }}s
+        </p>
+        <el-table v-if="detailData.boxes?.length" :data="detailData.boxes" size="small">
+          <el-table-column prop="class_name" label="类别" />
+          <el-table-column label="置信度">
+            <template #default="{ row }">
+              {{ (row.confidence * 100).toFixed(1) }}%
+            </template>
+          </el-table-column>
+        </el-table>
+        <p v-else class="detail-empty">未检测到目标</p>
+      </template>
+    </el-dialog>
+
     <!-- 分页 -->
     <div class="pagination-wrapper">
       <el-pagination
@@ -159,7 +180,13 @@ import {
   Loading,
   CircleClose,
 } from "@element-plus/icons-vue";
-import { getDetectionHistory } from "../api/detection";
+import { ElMessage } from "element-plus";
+import {
+  getDetectionHistory,
+  getDetectionDetail,
+  deleteDetection,
+  downloadDetectionImage,
+} from "../api/detection";
 import { staticUrl } from "../config/api";
 
 const router = useRouter();
@@ -171,6 +198,10 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 
 const historyRecords = ref([]);
+const detailVisible = ref(false);
+const detailLoading = ref(false);
+const detailData = ref(null);
+const detailImageUrl = ref("");
 
 const loadHistory = async () => {
   try {
@@ -179,9 +210,9 @@ const loadHistory = async () => {
       historyRecords.value = res.data.map((item) => ({
         id: item.id,
         filename: item.image_url.split("/").pop() || item.id,
-        image: item.result_image_url.startsWith("http")
-          ? item.result_image_url
-          : staticUrl(item.result_image_url),
+        image: staticUrl(item.result_image_url),
+        resultUrl: staticUrl(item.result_image_url),
+        originalUrl: staticUrl(item.image_url),
         type: "single",
         status: "completed",
         time: new Date(item.created_at).toLocaleString(),
@@ -241,21 +272,45 @@ const getTypeText = (type) => {
   return texts[type] || type;
 };
 
-const viewRecord = (record) => {
-  console.log("查看记录:", record);
-  // 这里可以跳转到检测详情页面
-};
-
-const downloadRecord = (record) => {
-  console.log("下载记录:", record);
-};
-
-const deleteRecord = (record) => {
-  if (confirm(`确定要删除记录 "${record.filename}" 吗？`)) {
-    const index = historyRecords.value.findIndex((r) => r.id === record.id);
-    if (index > -1) {
-      historyRecords.value.splice(index, 1);
+const viewRecord = async (record) => {
+  detailVisible.value = true;
+  detailLoading.value = true;
+  detailData.value = null;
+  try {
+    const res = await getDetectionDetail(record.id);
+    if (res.success && res.data) {
+      detailData.value = res.data;
+      detailImageUrl.value = staticUrl(res.data.result_image_url);
+    } else {
+      ElMessage.error(res.message || "加载详情失败");
+      detailVisible.value = false;
     }
+  } catch (e) {
+    detailVisible.value = false;
+  } finally {
+    detailLoading.value = false;
+  }
+};
+
+const downloadRecord = async (record) => {
+  try {
+    await downloadDetectionImage(record.id, `detection_${record.id}.jpg`);
+    ElMessage.success("已开始下载");
+  } catch (e) {
+    ElMessage.error(e.message || "下载失败");
+  }
+};
+
+const deleteRecord = async (record) => {
+  if (!confirm(`确定要删除记录 "${record.filename}" 吗？`)) return;
+  try {
+    const res = await deleteDetection(record.id);
+    if (res.success) {
+      historyRecords.value = historyRecords.value.filter((r) => r.id !== record.id);
+      ElMessage.success("已删除");
+    }
+  } catch (e) {
+    /* 错误已由 request 拦截器提示 */
   }
 };
 
@@ -456,6 +511,27 @@ const handlePageChange = (page) => {
     display: flex;
     justify-content: center;
     margin-top: 32px;
+  }
+
+  .detail-loading,
+  .detail-empty {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 24px;
+  }
+
+  .detail-image {
+    width: 100%;
+    max-height: 420px;
+    object-fit: contain;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+
+  .detail-meta {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
   }
 }
 </style>

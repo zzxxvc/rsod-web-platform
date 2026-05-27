@@ -9,6 +9,10 @@ const service = axios.create({
 
 service.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
     // FormData 必须由浏览器自动带 boundary，不能手写 Content-Type
     if (config.data instanceof FormData) {
       if (config.headers) {

@@ -1,5 +1,5 @@
 import request from '../utils/request'
-import { API_BASE } from '../config/api'
+import { API_BASE, authHeaders } from '../config/api'
 
 /**
  * 构建检测上传表单。
@@ -35,6 +35,33 @@ export const getDetectionDetail = (id) => {
     url: `/detection/detail/${id}`,
     method: 'get',
   })
+}
+
+export const deleteDetection = (id) => {
+  return request({
+    url: `/detection/${id}`,
+    method: 'delete',
+  })
+}
+
+/** 通过后端 attachment 响应触发浏览器下载 */
+export async function downloadDetectionImage(id, filename) {
+  const res = await fetch(`${API_BASE}/detection/download/${id}`, {
+    headers: authHeaders(),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.detail || '下载失败')
+  }
+  const blob = await res.blob()
+  const blobUrl = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = blobUrl
+  link.download = filename || `detection_${id}.jpg`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(blobUrl)
 }
 
 export const getTargetList = () => {

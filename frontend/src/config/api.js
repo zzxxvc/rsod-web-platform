@@ -12,3 +12,11 @@ export function staticUrl(relativePath) {
   if (/^https?:\/\//.test(relativePath)) return relativePath
   return `${API_ORIGIN}${relativePath.startsWith('/') ? '' : '/'}${relativePath}`
 }
+
+export function authHeaders(extra = {}) {
+  const token = localStorage.getItem('token')
+  return {
+    ...extra,
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}

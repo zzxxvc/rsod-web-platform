@@ -57,3 +57,29 @@ class TargetListResponse(BaseModel):
     success: bool
     message: str
     data: List[TargetItem]
+
+
+class ProfileStats(BaseModel):
+    total_diagnoses: int
+    high_risk_cases: int
+    average_accuracy: float
+    usage_days: int
+
+
+class ProfileStatsResponse(BaseModel):
+    success: bool
+    message: str
+    data: ProfileStats
+
+
+class UserProfile(BaseModel):
+    username: str
+    email: str
+    nickname: Optional[str] = None
+    role: str = "user"
+
+
+class UserProfileResponse(BaseModel):
+    success: bool
+    message: str
+    data: UserProfile

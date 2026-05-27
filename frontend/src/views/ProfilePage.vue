@@ -17,8 +17,8 @@
             />
           </el-avatar>
           <div class="user-basic-info">
-            <div class="user-name">皮肤诊断医生</div>
-            <div class="user-role">皮肤科专家</div>
+            <div class="user-name">{{ profile.username || "—" }}</div>
+            <div class="user-role">{{ roleLabel }}</div>
             <el-button
               size="small"
               type="primary"
@@ -33,19 +33,19 @@
 
       <div class="stats-cards">
         <div class="stat-card">
-          <div class="stat-value">12</div>
+          <div class="stat-value">{{ stats.total_diagnoses }}</div>
           <div class="stat-label">总诊断次数</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">24</div>
+          <div class="stat-value">{{ stats.high_risk_cases }}</div>
           <div class="stat-label">高危病例</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">93.7%</div>
+          <div class="stat-value">{{ accuracyText }}</div>
           <div class="stat-label">平均准确率</div>
         </div>
         <div class="stat-card">
-          <div class="stat-value">52</div>
+          <div class="stat-value">{{ stats.usage_days }}</div>
           <div class="stat-label">使用天数</div>
         </div>
       </div>
@@ -53,7 +53,60 @@
   </div>
 </template>
 
-<script setup></script>
+<script setup>
+import { computed, onMounted, reactive, ref } from "vue";
+import { getProfileMe, getProfileStats } from "../api/profile";
+
+const profile = reactive({
+  username: "",
+  email: "",
+  nickname: "",
+  role: "user",
+});
+
+const stats = reactive({
+  total_diagnoses: 0,
+  high_risk_cases: 0,
+  average_accuracy: 0,
+  usage_days: 1,
+});
+
+const loading = ref(false);
+
+const roleLabel = computed(() => {
+  const map = { user: "普通用户", admin: "管理员" };
+  return profile.nickname || map[profile.role] || "用户";
+});
+
+const accuracyText = computed(() => {
+  if (stats.total_diagnoses === 0) return "—";
+  return `${stats.average_accuracy}%`;
+});
+
+const loadProfile = async () => {
+  loading.value = true;
+  try {
+    const [meRes, statsRes] = await Promise.all([
+      getProfileMe(),
+      getProfileStats(),
+    ]);
+    if (meRes.success && meRes.data) {
+      Object.assign(profile, meRes.data);
+    }
+    if (statsRes.success && statsRes.data) {
+      Object.assign(stats, statsRes.data);
+    }
+  } catch (e) {
+    console.error("加载个人中心失败", e);
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+  loadProfile();
+});
+</script>
 
 <style scoped lang="scss">
 .profile-page {

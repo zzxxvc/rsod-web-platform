@@ -457,7 +457,7 @@ import {
   buildDetectionFormData,
   DETECTION_SINGLE_URL,
 } from "../api/detection";
-import { staticUrl } from "../config/api";
+import { staticUrl, authHeaders } from "../config/api";
 
 const selectedModel = ref("DermNet-v1");
 const detectionResult = ref(null);
@@ -760,6 +760,7 @@ const performLiveDetection = async () => {
     // 3. 调用检测 API
     const response = await fetch(DETECTION_SINGLE_URL, {
       method: "POST",
+      headers: authHeaders(),
       body: formData,
     });
 

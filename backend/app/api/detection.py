@@ -1,25 +1,34 @@
 import logging
 import os
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
+from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
+
+from app.deps import get_current_user
 from app.services.detection_service import detection_service
-from app.utils.file_utils import save_upload_file, ensure_directories
+from app.services.detection_store import (
+    delete_record as delete_detection_record,
+    get_detail,
+    get_owned_record,
+    list_history,
+    save_detection,
+)
+from app.utils.file_utils import save_upload_file, ensure_directories, static_path_from_url
 from app.config import settings
 from app.models.schemas import (
     SingleDetectionResponse,
     HistoryResponse,
     TargetListResponse,
     TargetItem,
-    HistoryItem,
 )
+from database import get_db
+from database.models import User
 
 router = APIRouter(prefix="/detection", tags=["detection"])
 logger = logging.getLogger(__name__)
 
 ensure_directories()
-
-DETECTION_HISTORY = []
-DETECTION_RESULT_STORAGE = {}
 
 
 @router.get("/status")
@@ -31,7 +40,9 @@ async def detection_status():
 @router.post("/single", response_model=SingleDetectionResponse)
 async def detect_single_image(
     file: UploadFile = File(...),
-    model_name: str = Form("pest-v1")
+    model_name: str = Form("pest-v1"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     ok, message = detection_service.readiness()
     if not ok:
@@ -43,28 +54,18 @@ async def detect_single_image(
     try:
         saved = await save_upload_file(file, settings.UPLOAD_DIR)
         logger.info(
-            "收到上传: field=%s upload_name=%s saved=%s",
-            "file",
+            "用户 %s 上传检测: %s -> %s",
+            current_user.username,
             file.filename,
             saved.absolute_path,
         )
         result = detection_service.detect_single_image(saved.absolute_path, model_name)
+        save_detection(db, current_user, result)
 
-        history_item = HistoryItem(
-            id=result.detection_id,
-            image_url=result.image_url,
-            result_image_url=result.result_image_url,
-            total_objects=len(result.boxes),
-            created_at=result.created_at,
-            model_name=result.model_name,
-        )
-        DETECTION_HISTORY.append(history_item)
-        DETECTION_RESULT_STORAGE[result.detection_id] = result
-        
         return SingleDetectionResponse(
             success=True,
             message="检测成功",
-            data=result
+            data=result,
         )
     except HTTPException:
         raise
@@ -76,25 +77,71 @@ async def detect_single_image(
 
 
 @router.get("/history", response_model=HistoryResponse)
-async def get_detection_history():
+async def get_detection_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    items = list_history(db, current_user)
     return HistoryResponse(
         success=True,
         message="获取成功",
-        data=DETECTION_HISTORY,
-        total=len(DETECTION_HISTORY)
+        data=items,
+        total=len(items),
     )
 
 
 @router.get("/detail/{detection_id}", response_model=SingleDetectionResponse)
-async def get_detection_detail(detection_id: str):
-    result = DETECTION_RESULT_STORAGE.get(detection_id)
+async def get_detection_detail(
+    detection_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = get_detail(db, current_user, detection_id)
     if not result:
-        raise HTTPException(status_code=404, detail="检测记录未找到")
+        raise HTTPException(status_code=404, detail="检测记录未找到或无权访问")
     return SingleDetectionResponse(
         success=True,
         message="获取成功",
-        data=result
+        data=result,
     )
+
+
+@router.get("/download/{detection_id}")
+async def download_detection_result(
+    detection_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    record = get_owned_record(db, current_user, detection_id)
+    if not record or not record.result_image_key:
+        raise HTTPException(status_code=404, detail="检测记录未找到或无权下载")
+
+    try:
+        file_path = static_path_from_url(record.result_image_key)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="无效的结果图路径")
+
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="结果图文件不存在")
+
+    download_name = f"detection_{detection_id[:8]}{os.path.splitext(file_path)[1] or '.jpg'}"
+    return FileResponse(
+        file_path,
+        media_type="application/octet-stream",
+        filename=download_name,
+        headers={"Content-Disposition": f'attachment; filename="{download_name}"'},
+    )
+
+
+@router.delete("/{detection_id}")
+async def delete_detection(
+    detection_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not delete_detection_record(db, current_user, detection_id):
+        raise HTTPException(status_code=404, detail="检测记录未找到或无权删除")
+    return {"success": True, "message": "删除成功"}
 
 
 @router.get("/targets/list", response_model=TargetListResponse)
@@ -110,5 +157,5 @@ async def get_target_list():
     return TargetListResponse(
         success=True,
         message="获取成功",
-        data=targets
+        data=targets,
     )

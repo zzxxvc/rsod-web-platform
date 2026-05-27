@@ -61,3 +61,13 @@ def get_file_url(filename: str, subdir: str) -> str:
     """返回浏览器可访问的相对 URL，绝不返回磁盘绝对路径。"""
     safe_name = os.path.basename(filename)
     return f"/{subdir.strip('/')}/{safe_name}"
+
+
+def static_path_from_url(static_url: str) -> str:
+    """将 /static/uploads/xxx.jpg 转为本地绝对路径。"""
+    if not static_url:
+        raise ValueError("无效的文件 URL")
+    path = static_url.lstrip("/")
+    if path.startswith("static/"):
+        path = path[len("static/") :]
+    return os.path.join(settings.STATIC_DIR, path)

@@ -4,23 +4,19 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f96fe390-c4d3-4983-bc45-a54cdfadec70" name="更改" comment="今天的优化内容，数据库问题还没完全解决">
-      <change afterPath="$PROJECT_DIR$/backend/database/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/database/base.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/database/models.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/database/session.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/scripts/check_env.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/config/api.js" afterDir="false" />
+    <list default="true" id="f96fe390-c4d3-4983-bc45-a54cdfadec70" name="更改" comment="niceeee">
+      <change afterPath="$PROJECT_DIR$/backend/app/api/profile.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/app/auth_config.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/app/deps.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/app/services/detection_store.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/results/result_863f513c16de46ad8eb249591a7e0b19.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/static/uploads/temp_da508ea019180ef8a2795e580dda86e7.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/api/profile.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/app/api/detection.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/api/detection.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app/services/detection_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/services/detection_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/app/models/schemas.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/models/schemas.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/app/utils/file_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app/utils/file_utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/database.py" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/models.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/backend/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/skin.db" beforeDir="false" afterPath="$PROJECT_DIR$/backend/skin.db" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/static/results/result_2ef7caf821ac4cc3862cdeee7e428a37.jpg" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/static/results/result_371814453c544abd9a05560b764ea3e3.jpg" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/static/results/result_527f43cd16ea4c2996b0bc4535bf3e8a.jpg" beforeDir="false" />
@@ -41,14 +37,12 @@
       <change beforePath="$PROJECT_DIR$/backend/static/uploads/temp_894d947181925ffe6f391faf4924fe9d.jpg" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/static/uploads/temp_a61613a6c12268894dfaf297f0fbcb07.jpg" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/static/uploads/temp_ead1699976bbe774a999d9f1c2bdb489.jpg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/api/auth.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/api/auth.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/api/detection.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/api/detection.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/config/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/config/api.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/utils/request.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/utils/request.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/views/DetectionPage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/DetectionPage.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/views/HistoryPage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/HistoryPage.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/views/LoginPage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/LoginPage.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/views/RegisterPage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/RegisterPage.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/vite.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/vite.config.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/views/ProfilePage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/views/ProfilePage.vue" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -86,33 +80,33 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.generate_er_diagram.executor": "Run",
-    "Python.main.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "数据库完全体版本（修改较多）",
-    "ignore.virus.scanning.warn.message": "true",
-    "junie.onboarding.icon.badge.shown": "true",
-    "last_opened_file_path": "E:/pypypy/python projects/rsod-web-platform/backend/app/models",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
-    "to.speed.mode.migration.done": "true",
-    "ts.external.directory.path": "C:\\Users\\22442\\PyCharm 2024.1.1\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.generate_er_diagram.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;数据库完全体版本（修改较多）&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/pypypy/python projects/rsod-web-platform/backend/app/models&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\22442\\PyCharm 2024.1.1\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="E:\pypypy\python projects\rsod-web-platform\backend\app\models" />
@@ -194,7 +188,8 @@
       <workItem from="1779424395898" duration="426000" />
       <workItem from="1779433178483" duration="323000" />
       <workItem from="1779437853456" duration="3059000" />
-      <workItem from="1779760552983" duration="9649000" />
+      <workItem from="1779760552983" duration="11587000" />
+      <workItem from="1779866033589" duration="2369000" />
     </task>
     <task id="LOCAL-00001" summary="数据库内容搞定，注册界面解决，也测试了两个用户不会互通信息">
       <option name="closed" value="true" />
@@ -220,7 +215,15 @@
       <option name="project" value="LOCAL" />
       <updated>1779437909223</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="niceeee">
+      <option name="closed" value="true" />
+      <created>1779792232342</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1779792232342</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -247,7 +250,8 @@
     <MESSAGE value="数据库内容搞定，注册界面解决，也测试了两个用户不会互通信息" />
     <MESSAGE value="requirement更新，yolo11n复制进backend/app/models" />
     <MESSAGE value="今天的优化内容，数据库问题还没完全解决" />
-    <option name="LAST_COMMIT_MESSAGE" value="今天的优化内容，数据库问题还没完全解决" />
+    <MESSAGE value="niceeee" />
+    <option name="LAST_COMMIT_MESSAGE" value="niceeee" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/rsod_web_platform$main.coverage" NAME="main 覆盖结果" MODIFIED="1779338487546" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/backend" />

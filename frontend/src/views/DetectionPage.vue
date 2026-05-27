@@ -88,10 +88,10 @@
         <div class="info-cards">
           <div class="info-card small-card">
             <div class="info-card-heading">当前模型</div>
-            <el-select v-model="selectedModel" class="model-select">
-              <el-option label="DermNet-v1" value="DermNet-v1" />
-              <el-option label="DermNet-v2" value="DermNet-v2" />
-            </el-select>
+            <div class="info-card small-card">
+              <div class="info-card-heading">当前模型</div>
+              <div class="model-name">YOLOv11n.pt</div>
+            </div>
           </div>
 
           <div class="info-card small-card">

@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+#在backend/.env文件中配置BAILIAN_API_KEY=你的阿里云百炼API密钥
+load_dotenv()
+
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -10,6 +14,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from app.api.detection import router as detection_router
+from app.api.qa import router as qa_router
 from app.config import settings
 from app.utils.file_utils import ensure_directories
 from database import create_tables, get_db
@@ -34,6 +39,7 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 app.include_router(detection_router, prefix="/api")
+app.include_router(qa_router, prefix="/api")
 
 # --- 认证配置 ---
 SECRET_KEY = "your-secret-key-here-keep-it-safe"

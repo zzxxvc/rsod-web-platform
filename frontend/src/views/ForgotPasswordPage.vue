@@ -1,40 +1,129 @@
 <template>
-  <div class="forgot-container">
-    <div class="forgot-card">
-      <div class="forgot-header">
-        <div class="logo-icon">
-          <el-icon :size="40" color="#27ae60"><Lock /></el-icon>
+  <div class="auth-page">
+    <!-- 左侧品牌展示区 -->
+    <div class="auth-panel brand-panel">
+      <div class="brand-content">
+        <div class="brand-logo">
+          <svg viewBox="0 0 60 60" class="logo-svg">
+            <circle
+              cx="30"
+              cy="30"
+              r="28"
+              fill="none"
+              stroke="rgba(255,255,255,0.4)"
+              stroke-width="2"
+            />
+            <circle cx="30" cy="30" r="12" fill="rgba(255,255,255,0.25)" />
+            <circle cx="30" cy="30" r="6" fill="rgba(255,255,255,0.6)" />
+            <line
+              x1="30"
+              y1="6"
+              x2="30"
+              y2="18"
+              stroke="rgba(255,255,255,0.5)"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="30"
+              y1="42"
+              x2="30"
+              y2="54"
+              stroke="rgba(255,255,255,0.5)"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="6"
+              y1="30"
+              x2="18"
+              y2="30"
+              stroke="rgba(255,255,255,0.5)"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="42"
+              y1="30"
+              x2="54"
+              y2="30"
+              stroke="rgba(255,255,255,0.5)"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
         </div>
-        <h1 class="forgot-title">找回密码</h1>
-        <p class="forgot-subtitle">输入您的注册邮箱，我们将发送重置链接</p>
+        <h1 class="brand-title">RSOD 智能检测平台</h1>
+        <p class="brand-desc">不用担心，我们帮您快速找回账号访问权限。</p>
+        <div class="brand-features">
+          <div class="feature-item">
+            <span class="feature-dot"></span>
+            <span>输入注册邮箱即可</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-dot"></span>
+            <span>重置链接实时发送</span>
+          </div>
+          <div class="feature-item">
+            <span class="feature-dot"></span>
+            <span>全程加密安全无忧</span>
+          </div>
+        </div>
       </div>
+      <div class="brand-footer">
+        <span>© 2026 RSOD Platform</span>
+      </div>
+    </div>
 
-      <el-form
-        ref="forgotForm"
-        :model="forgotForm"
-        :rules="forgotRules"
-        class="forgot-form"
-      >
-        <el-form-item prop="email">
-          <el-input
-            v-model="forgotForm.email"
-            type="email"
-            placeholder="请输入注册邮箱"
+    <!-- 右侧表单区 -->
+    <div class="auth-panel form-panel">
+      <div class="form-wrapper">
+        <div class="form-header">
+          <div class="back-nav">
+            <router-link to="/login" class="back-link">
+              <el-icon><ArrowLeft /></el-icon>
+              <span>返回登录</span>
+            </router-link>
+          </div>
+          <h2>找回密码</h2>
+          <p>输入您的注册邮箱，我们将发送密码重置链接</p>
+        </div>
+
+        <el-form
+          ref="forgotFormRef"
+          :model="forgotForm"
+          :rules="forgotRules"
+          class="auth-form"
+          @keyup.enter="handleSubmit"
+        >
+          <el-form-item prop="email">
+            <el-input
+              v-model="forgotForm.email"
+              placeholder="注册邮箱"
+              size="large"
+              class="auth-input"
+            >
+              <template #prefix>
+                <el-icon class="input-icon"><Message /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+
+          <el-button
+            type="primary"
             size="large"
-            prefix-icon="Message"
-          />
-        </el-form-item>
-
-        <el-form-item>
-          <el-button type="primary" size="large" class="submit-btn" @click="handleSubmit">
+            class="submit-btn"
+            :loading="loading"
+            @click="handleSubmit"
+          >
             发送重置链接
           </el-button>
-        </el-form-item>
-      </el-form>
+        </el-form>
 
-      <div class="back-link">
-        <span>想起密码了？</span>
-        <router-link to="/login">返回登录</router-link>
+        <div class="form-footer">
+          <span>想起密码了？</span>
+          <router-link to="/login" class="text-link">立即登录</router-link>
+        </div>
       </div>
     </div>
   </div>
@@ -42,11 +131,12 @@
 
 <script setup>
 import { ref, reactive } from "vue";
-import { Lock, Message } from "@element-plus/icons-vue";
+import { Message, ArrowLeft } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 
 const router = useRouter();
+const loading = ref(false);
 
 const forgotForm = reactive({
   email: "",
@@ -63,87 +153,267 @@ const forgotFormRef = ref(null);
 
 const handleSubmit = () => {
   forgotFormRef.value.validate((valid) => {
-    if (valid) {
-      console.log("找回密码请求:", forgotForm.email);
-      ElMessage.success("重置链接已发送到您的邮箱");
-      setTimeout(() => {
-        router.push("/login");
-      }, 1500);
-    }
+    if (!valid) return;
+    loading.value = true;
+    // 模拟发送
+    setTimeout(() => {
+      loading.value = false;
+      ElMessage.success("重置链接已发送到您的邮箱，请查收");
+      setTimeout(() => router.push("/login"), 1500);
+    }, 1200);
   });
 };
 </script>
 
 <style scoped>
-.forgot-container {
+/* ========== 整体布局 ========== */
+.auth-page {
+  display: flex;
   min-height: 100vh;
+  width: 100%;
+}
+
+.auth-panel {
+  flex: 1;
+}
+
+/* ========== 左侧品牌面板 ========== */
+.brand-panel {
+  background: linear-gradient(160deg, #1e3a5f 0%, #2d6a9f 40%, #3b8bc6 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-panel::before {
+  content: "";
+  position: absolute;
+  top: -30%;
+  right: -20%;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.brand-panel::after {
+  content: "";
+  position: absolute;
+  bottom: -15%;
+  left: -10%;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.brand-content {
+  max-width: 380px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.brand-logo {
+  margin-bottom: 28px;
+}
+
+.logo-svg {
+  width: 72px;
+  height: 72px;
+}
+
+.brand-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 16px;
+  letter-spacing: 1px;
+}
+
+.brand-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.8;
+  margin: 0 0 32px;
+}
+
+.brand-features {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.feature-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+
+.brand-footer {
+  position: absolute;
+  bottom: 28px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ========== 右侧表单面板 ========== */
+.form-panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  background: #fff;
+  padding: 40px;
 }
 
-.forgot-card {
+.form-wrapper {
   width: 100%;
   max-width: 400px;
-  padding: 40px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-.forgot-header {
-  text-align: center;
-  margin-bottom: 32px;
+.form-header {
+  margin-bottom: 36px;
 }
 
-.logo-icon {
-  width: 60px;
-  height: 60px;
-  margin: 0 auto 16px;
-  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-  border-radius: 12px;
-  display: flex;
+.back-nav {
+  margin-bottom: 20px;
+}
+
+.back-link {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-}
-
-.forgot-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 6px;
-}
-
-.forgot-subtitle {
+  gap: 6px;
   font-size: 13px;
-  color: #6b7280;
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.2s;
 }
 
-.forgot-form {
+.back-link:hover {
+  color: #3b82f6;
+}
+
+.form-header h2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px;
+}
+
+.form-header p {
+  font-size: 14px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ========== 表单元素 ========== */
+.auth-form :deep(.el-form-item) {
   margin-bottom: 24px;
+}
+
+.auth-form :deep(.el-form-item__error) {
+  font-size: 12px;
+}
+
+.auth-input :deep(.el-input__wrapper) {
+  border-radius: 10px;
+  padding: 4px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: none;
+  transition: all 0.25s;
+}
+
+.auth-input :deep(.el-input__wrapper:hover) {
+  border-color: #94a3b8;
+  background: #fff;
+}
+
+.auth-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: #fff;
+}
+
+.input-icon {
+  color: #94a3b8;
+  font-size: 16px;
+}
+
+.text-link {
+  font-size: 13px;
+  color: #3b82f6;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.text-link:hover {
+  color: #2563eb;
 }
 
 .submit-btn {
   width: 100%;
-  height: 44px;
-  border-radius: 8px;
+  height: 46px;
+  border-radius: 10px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 1px;
+  background: #1e3a5f;
+  border-color: #1e3a5f;
+  transition: all 0.3s;
 }
 
-.back-link {
+.submit-btn:hover {
+  background: #2d6a9f;
+  border-color: #2d6a9f;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(30, 58, 95, 0.3);
+}
+
+.form-footer {
   text-align: center;
-  font-size: 13px;
-  color: #6b7280;
+  font-size: 14px;
+  color: #94a3b8;
+  margin-top: 28px;
 }
 
-.back-link a {
-  color: #27ae60;
+.form-footer .text-link {
   margin-left: 4px;
+  font-size: 14px;
 }
 
-.back-link a:hover {
-  text-decoration: underline;
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .brand-panel {
+    display: none;
+  }
+
+  .form-panel {
+    padding: 32px 24px;
+  }
+
+  .form-wrapper {
+    max-width: 100%;
+  }
+
+  .form-header h2 {
+    font-size: 22px;
+  }
 }
 </style>
